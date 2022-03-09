@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const a = Object.create(Array.prototype);
+      a.push = function push() {};
+      const array = [];
+      array.__proto__ = a;
+      console.log(a);
+      console.log(typeof a);
+      console.log(array);
+      console.log(typeof array);
+      console.log(a.__proto__);
+      console.log(array.__proto__);
+      console.log([].__proto__);
+
+      //___________________________
+      const person = {
+        isHuman: false,
+        printIntroduction: function () {
+          console.log(`My name is ${this.name}. Am I human? ${this.isHuman}`);
+        },
+      };
+
+      const me = Object.create(person);
+
+      me.name = "Matthew"; // "name" is a property set on "me", but not on "person"
+      me.isHuman = true; // inherited properties can be overwritten
+
+      me.printIntroduction();
+      // expected output: "My name is Matthew. Am I human? true"
+
+      //
+      function myCreate(target) {
+        var o = new Object();
+        o.__proto__ = target;
+        return o;
+      }
+
+      var mo = Object.create(Array.prototype);
+      var mn = new Array();
+      console.log(mo.__proto__ === mn.__proto__);
+    </script>
+  </body>
+</html>

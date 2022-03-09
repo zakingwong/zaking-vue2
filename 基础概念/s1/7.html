@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body></body>
+  <script>
+    var data = {};
+
+    class Observer {
+      constructor(data) {
+        // this是个对象，然后
+        data.__ob__ = {};
+        Object.keys(data).forEach((key) => observe(data[key]));
+      }
+    }
+    function observe(data) {
+      return new Observer(data);
+    }
+
+    observe(data);
+  </script>
+</html>
