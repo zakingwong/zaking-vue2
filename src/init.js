@@ -1,9 +1,9 @@
 import { initState } from "./state";
 import { complierToFcuntion } from "./complier/index";
+import { mountComponent } from "./lifecycle";
 export function initMixin(Vue) {
   Vue.prototype._init = function (options) {
     const vm = this;
-    console.log(this, "this");
     vm.$options = options;
     initState(vm);
     if (options.el) {
@@ -23,11 +23,11 @@ export function initMixin(Vue) {
           template = ops.template;
         }
       }
-      console.log(template);
-      if (template) {
+      if (template && el) {
         const render = complierToFcuntion(template);
         ops.render = render;
       }
     }
+    mountComponent(vm, el);
   };
 }

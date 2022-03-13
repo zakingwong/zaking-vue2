@@ -1,114 +1,71 @@
-const attribute =
-  /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/;
-const ncname = `[a-zA-Z_][\\-\\.0-9_a-zA-Z]*`;
-const qnameCapture = `((?:${ncname}\\:)?${ncname})`;
-const startTagOpen = new RegExp(`^<${qnameCapture}`);
-const startTagClose = /^\s*(\/?)>/;
-const endTag = new RegExp(`^<\\/${qnameCapture}[^>]*>`);
+import { parseHTML } from "./parse";
 const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g;
 
-function parseHTML(html) {
-  const ELEMENT_TYPE = 1;
-  const TEXT_TYPE = 3;
-  const stack = [];
-  let currentParent;
-  let root;
-  function createASTElement(tag, attrs) {
-    return {
-      tag,
-      type: ELEMENT_TYPE,
-      children: [],
-      attrs,
-      parent: null,
-    };
+function genProps(attrs) {
+  let str = "";
+  for (let i = 0; i < attrs.length; i++) {
+    let attr = attrs[i];
+    if (attr.name === "style") {
+      let obj = {};
+      attr.value.split(";").forEach((item) => {
+        let [key, value] = item.split(":");
+        obj[key] = value;
+      });
+      attr.value = obj;
+    }
+    str += `${attr.name}:${JSON.stringify(attr.value)},`;
   }
-  function start(tag, attrs) {
-    let node = createASTElement(tag, attrs);
-    if (!root) {
-      // 是否是空树
-      root = node; // 如果是额话那么当前的节点就是根节点
-    }
-    if (currentParent) {
-      node.parent = currentParent;
-      currentParent.children.push(node);
-    }
+  return `{${str.slice(0, -1)}}`;
+}
 
-    stack.push(node);
-    currentParent = node;
-  }
-  function chars(text) {
-    text = text.replace(/\s/g, "");
-    currentParent.children.push({
-      type: TEXT_TYPE,
-      text,
-      parent: currentParent,
-    });
-  }
-  function end() {
-    stack.pop();
-    currentParent = stack[stack.length - 1];
-  }
-  function advance(n) {
-    html = html.substring(n);
-  }
-  function parseStartTag() {
-    const start = html.match(startTagOpen);
-    if (start) {
-      const match = {
-        tagName: start[1],
-        attrs: [],
-      };
-      advance(start[0].length);
-      // 如果不是开始标签的结束，就一直匹配下去
-      let attr, end;
-      while (
-        !(end = html.match(startTagClose)) &&
-        (attr = html.match(attribute))
-      ) {
-        advance(attr[0].length);
-        match.attrs.push({
-          name: attr[1],
-          value: attr[3] || attr[4] || attr[5] || true,
-        });
+function gen(node) {
+  if (node.type === 1) {
+    return codegen(node);
+  } else {
+    let text = node.text;
+    if (!defaultTagRE.test(text)) {
+      return `_v(${JSON.stringify(text)})`;
+    } else {
+      let tokens = [];
+      let match;
+      defaultTagRE.lastIndex = 0;
+      let lastIndex = 0;
+      while ((match = defaultTagRE.exec(text))) {
+        let index = match.index;
+        if (index > lastIndex) {
+          tokens.push(JSON.stringify(text.slice(lastIndex, index)));
+        }
+        tokens.push(`_s(${match[1].trim()})`);
+        lastIndex = index + match[0].length;
       }
-      if (end) {
-        advance(end[0].length);
+      if (lastIndex < text.length) {
+        tokens.push(JSON.stringify(text.slice(lastIndex)));
       }
-      return match;
+      return `_v(${tokens.join("+")})`;
     }
+  }
+}
 
-    return false;
+function genChildren(children) {
+  if (children) {
+    return children.map((child) => gen(child)).join(",");
   }
-  while (html) {
-    let textEnd = html.indexOf("<");
-    // 如果textEnd是0，说明是一个开始标签或是一个结束标签
-    // 如果textEnd大于0，说明就是文本的结束位置
-    if (textEnd === 0) {
-      const startTagMatch = parseStartTag();
-      if (startTagMatch) {
-        start(startTagMatch.tagName, startTagMatch.attrs);
-        continue;
-      }
-      let endTagMatch = html.match(endTag);
-      if (endTagMatch) {
-        advance(endTagMatch[0].length);
-        end(endTagMatch[1]);
-        continue;
-      }
-    }
-    if (textEnd > 0) {
-      let text = html.substring(0, textEnd);
-      if (text) {
-        chars(text);
-        advance(text.length);
-      }
-    }
-  }
-  console.log(root);
+}
+
+function codegen(ast) {
+  let children = genChildren(ast.children);
+  let code = `_c('${ast.tag}',${
+    ast.attrs.length ? genProps(ast.attrs) : "null"
+  }${ast.children.length ? `,${children}` : ""})`;
+  return code;
 }
 
 export function complierToFcuntion(template) {
   // 将template转换成ast
   let ast = parseHTML(template);
   //生成render方法，返回虚拟DOM
+  let code = codegen(ast);
+  code = `with(this){return ${code}}`;
+  let render = new Function(code);
+  return render;
 }

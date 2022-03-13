@@ -7,9 +7,9 @@
     <title>Document</title>
   </head>
   <body>
-    <div id="app">
+    <div id="app" key="123" style="color: red; background-color: pink">
       <div style="color: red">{{name}}</div>
-      dadasdsa
+      {{name}}dadasdsa{{name}} hello
       <br />
       <span>{{age}}</span>
     </div>
@@ -29,6 +29,11 @@
         },
         el: "#app",
       });
+      setTimeout(() => {
+        vm.name = "zakingwong";
+        vm.age = 30;
+        vm._update(vm._render());
+      }, 2000);
     </script>
   </body>
 </html>
