@@ -7,31 +7,28 @@
     <title>Document</title>
   </head>
   <body>
+    <div id="app">
+      <div style="color: red">{{name}}</div>
+      dadasdsa
+      <br />
+      <span>{{age}}</span>
+    </div>
     <script src="vue.js"></script>
     <script>
       const vm = new Vue({
         data() {
           return {
-            name: "zf",
+            name: "zaking",
             age: 20,
             address: {
               a: 1,
               b: 2,
             },
-            // 每一个数组都代理，那就会产生性能问题
             hobby: ["eat", "drink", { a: 3 }],
           };
         },
+        el: "#app",
       });
-      console.log(vm);
-      console.log(vm.address);
-      vm.address = {
-        x: 1,
-      };
-      console.log(vm);
-      vm.hobby[2].a;
-      vm.hobby.push("1");
-      vm.hobby[2].a = 100;
     </script>
   </body>
 </html>

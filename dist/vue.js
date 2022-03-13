@@ -172,12 +172,169 @@
     }
   }
 
+  var attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/;
+  var ncname = "[a-zA-Z_][\\-\\.0-9_a-zA-Z]*";
+  var qnameCapture = "((?:".concat(ncname, "\\:)?").concat(ncname, ")");
+  var startTagOpen = new RegExp("^<".concat(qnameCapture));
+  var startTagClose = /^\s*(\/?)>/;
+  var endTag = new RegExp("^<\\/".concat(qnameCapture, "[^>]*>"));
+
+  function parseHTML(html) {
+    var ELEMENT_TYPE = 1;
+    var TEXT_TYPE = 3;
+    var stack = [];
+    var currentParent;
+    var root;
+
+    function createASTElement(tag, attrs) {
+      return {
+        tag: tag,
+        type: ELEMENT_TYPE,
+        children: [],
+        attrs: attrs,
+        parent: null
+      };
+    }
+
+    function start(tag, attrs) {
+      var node = createASTElement(tag, attrs);
+
+      if (!root) {
+        // 是否是空树
+        root = node; // 如果是额话那么当前的节点就是根节点
+      }
+
+      if (currentParent) {
+        node.parent = currentParent;
+        currentParent.children.push(node);
+      }
+
+      stack.push(node);
+      currentParent = node;
+    }
+
+    function chars(text) {
+      text = text.replace(/\s/g, "");
+      currentParent.children.push({
+        type: TEXT_TYPE,
+        text: text,
+        parent: currentParent
+      });
+    }
+
+    function end() {
+      stack.pop();
+      currentParent = stack[stack.length - 1];
+    }
+
+    function advance(n) {
+      html = html.substring(n);
+    }
+
+    function parseStartTag() {
+      var start = html.match(startTagOpen);
+
+      if (start) {
+        var match = {
+          tagName: start[1],
+          attrs: []
+        };
+        advance(start[0].length); // 如果不是开始标签的结束，就一直匹配下去
+
+        var attr, _end;
+
+        while (!(_end = html.match(startTagClose)) && (attr = html.match(attribute))) {
+          advance(attr[0].length);
+          match.attrs.push({
+            name: attr[1],
+            value: attr[3] || attr[4] || attr[5] || true
+          });
+        }
+
+        if (_end) {
+          advance(_end[0].length);
+        }
+
+        return match;
+      }
+
+      return false;
+    }
+
+    while (html) {
+      var textEnd = html.indexOf("<"); // 如果textEnd是0，说明是一个开始标签或是一个结束标签
+      // 如果textEnd大于0，说明就是文本的结束位置
+
+      if (textEnd === 0) {
+        var startTagMatch = parseStartTag();
+
+        if (startTagMatch) {
+          start(startTagMatch.tagName, startTagMatch.attrs);
+          continue;
+        }
+
+        var endTagMatch = html.match(endTag);
+
+        if (endTagMatch) {
+          advance(endTagMatch[0].length);
+          end(endTagMatch[1]);
+          continue;
+        }
+      }
+
+      if (textEnd > 0) {
+        var text = html.substring(0, textEnd);
+
+        if (text) {
+          chars(text);
+          advance(text.length);
+        }
+      }
+    }
+
+    console.log(root);
+  }
+
+  function complierToFcuntion(template) {
+    // 将template转换成ast
+    parseHTML(template); //生成render方法，返回虚拟DOM
+  }
+
   function initMixin(Vue) {
     Vue.prototype._init = function (options) {
       var vm = this;
       console.log(this, "this");
       vm.$options = options;
       initState(vm);
+
+      if (options.el) {
+        vm.$mount(options.el);
+      }
+    };
+
+    Vue.prototype.$mount = function (el) {
+      var vm = this;
+      el = document.querySelector(el);
+      var ops = vm.$options;
+
+      if (!ops.render) {
+        var template;
+
+        if (!ops.template && el) {
+          template = el.outerHTML;
+        } else {
+          if (el) {
+            template = ops.template;
+          }
+        }
+
+        console.log(template);
+
+        if (template) {
+          var render = complierToFcuntion(template);
+          ops.render = render;
+        }
+      }
     };
   }
 
