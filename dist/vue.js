@@ -175,13 +175,13 @@
   function initMixin(Vue) {
     Vue.prototype._init = function (options) {
       var vm = this;
-      console.log(this, "this");
       vm.$options = options;
       initState(vm);
     };
   }
 
   function Vue(options) {
+    // 这个this，指的的vm，也就是Vue的实例
     this._init(options);
   }
 
