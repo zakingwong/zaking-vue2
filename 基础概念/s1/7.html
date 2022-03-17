@@ -8,16 +8,20 @@
   </head>
   <body></body>
   <script>
+    /*
+      7、为什么Observer类的contructor中，不能这样设置__ob__对象：data.__ob__ = this
+    */
     var data = {};
 
     class Observer {
       constructor(data) {
         // this是个对象，然后
-        data.__ob__ = {};
+        data.__ob__ = "1";
         Object.keys(data).forEach((key) => observe(data[key]));
       }
     }
     function observe(data) {
+      if (typeof data !== "object") return;
       return new Observer(data);
     }
 

@@ -16,7 +16,6 @@ methods.forEach((method) => {
       case "push":
       case "unshift":
         inserted = args;
-
         break;
       case "splice":
         inserted = args.slice(2);
