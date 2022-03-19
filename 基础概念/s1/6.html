@@ -6,12 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
   </head>
-  <body>
-    <script>
-      /*
-        
-            6.this到底指向了谁？(原型中的this？)
-        */
-    </script>
-  </body>
+  <body></body>
+  <script>
+    /*
+      6、为什么Observer类的contructor中，不能这样设置__ob__对象：data.__ob__ = this
+    */
+    var data = {};
+    class Observer {
+      constructor(data) {
+        // this是个对象，然后
+        data.__ob__ = {};
+        Object.keys(data).forEach((key) => observe(data[key]));
+      }
+    }
+    function observe(data) {
+      return new Observer(data);
+    }
+    observe(data);
+    // 大家可以在src里仔细回顾下这段代码，实际上，从observe调用了开始，
+    // 然后new了一个Observer，然后给data上增加了一个ob对象，然后又observe了一下，
+    // 又new了个Observer，又加了个ob对象，又observe了一下……
+  </script>
 </html>

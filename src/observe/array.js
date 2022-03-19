@@ -8,6 +8,7 @@ let methods = ["push", "pop", "shift", "unshift", "reverse", "sort", "splice"];
 
 methods.forEach((method) => {
   newArrayProto[method] = function (...args) {
+    // 这个this是调用方法的那个数组
     const result = oldArrayProto[method].call(this, ...args);
 
     let inserted;

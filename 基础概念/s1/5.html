@@ -9,8 +9,81 @@
   <body>
     <script>
       /*
-            5、this到底指向了哪？
+        
+            5、this到底指向了谁？(原型中的this？)
         */
+      //  this的指向真的是让人烦恼的问题，就那几种情况，但又不单单是那么几种情况。
+      // 1)
+      console.log(this, "1-1");
+      a1();
+      function a1() {
+        console.log(this, "1-2");
+      }
+      // 2)
+      let o2 = {
+        name: "Zaking",
+        fn: function () {
+          console.log(this.name, "2-1");
+        },
+      };
+      o2.fn();
+      // 3)
+      var o3 = {
+        name: "zaking",
+        a: {
+          // name: "wong",
+          fn: function () {
+            console.log(this.name, "3-1"); //undefined
+          },
+        },
+      };
+      o3.a.fn();
+      // 4)
+      var o4 = {
+        a: 10,
+        b: {
+          a: 12,
+          fn: function () {
+            console.log(this.a, "4-1");
+            console.log(this, "4-2");
+          },
+        },
+      };
+      var j = o4.b.fn;
+      j();
+      // 5)
+      function Fn() {
+        this.name = "zaking";
+        // return null; 没有返回值，相当于返回的是null
+      }
+      var o5 = new Fn();
+      console.log(o5.name, "5-1");
+
+      function Fn1() {
+        this.name = "zaking";
+        return {};
+      }
+      var o5_1 = new Fn1();
+      console.log(o5_1.name, "5-2");
+      // 6)
+      // 这个，你得hi到setTimeout原理，我不知道它得原理是啥，但是既然它得回调函数内部得this指向了window，那说明它是在window 下执行的。
+      setTimeout(() => {
+        console.log(this, "6-1");
+      }, 0);
+      // 7)
+      // this跟原型链没有关系！！！
+      function FnP() {}
+      FnP.prototype.getName = function () {
+        console.log(this.name, "7-1");
+      };
+      let fnp = new FnP();
+      fnp.name = "zakink-7";
+      fnp.getName();
+      // 总结一下
+      // 1、函数调用，this指向调用者，不是编译时的调用者，而是执行时的调用者。
+      // a.b.c.fn()。把函数之前的都看作一个整体，也就是说调用者是c。这个很好理解
+      // 所以，普通函数、方法、定时器、dom事件等。都是函数调用的情况，无非你要分清“谁”调用的
+      // 2、构造函数，实际上跟this指向的关系不大，而是new到底做了什么，看前面的你自然就懂了。
     </script>
   </body>
 </html>

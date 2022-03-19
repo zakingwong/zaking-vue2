@@ -9,6 +9,37 @@
   <body>
     <script>
       // 4、new到底new了个啥？
+      // 先来看段代码吧
+      function Vue(options) {
+        let vm = this;
+        vm.$options = options;
+        console.log(vm, "this");
+      }
+
+      const vm = new Vue({
+        data() {
+          return {
+            a: 1,
+          };
+        },
+      });
+      console.log(vm, "实例");
+      // 那，我们的new到底干了啥呢？
+      function myNew(klass, ...args) {
+        var obj = {};
+        obj.__proto__ = klass.prototype;
+        klass.call(obj, ...args);
+        return obj;
+      }
+      const my_vm = myNew(Vue, {
+        data() {
+          return {
+            a: 1,
+          };
+        },
+      });
+      console.log(my_vm, "自定义-New");
+      // 所以其实大家都懂了吧。
     </script>
   </body>
 </html>
