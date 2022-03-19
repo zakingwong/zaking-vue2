@@ -110,6 +110,7 @@
         args[_key] = arguments[_key];
       }
 
+      // 这个this是调用方法的那个数组
       var result = (_oldArrayProto$method = oldArrayProto[method]).call.apply(_oldArrayProto$method, [this].concat(args));
 
       var inserted;
