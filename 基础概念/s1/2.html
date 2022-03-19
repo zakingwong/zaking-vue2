@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      /*
+            2、defineProperty是怎么代理的，有什么限制？
+        */
+      // 在初始化数据的这个阶段，通过defineReactive来观测数据的变化，再通过proxy把data的数据代理到vm实例上。
+      // 我们写个简易版的defineReactive，看看defineProperty到底干了啥。
+      function Vue(options) {
+        let _data =
+          typeof options.data === "function"
+            ? options.data.call(this)
+            : options.data;
+        this.$data = _data;
+        Object.keys(_data).forEach((key) =>
+          defineReactive(_data, key, _data[key])
+        );
+      }
+      function defineReactive(target, key, value) {
+        Object.defineProperty(target, key, {
+          get() {
+            console.log(value, "取值了");
+            return value;
+          },
+          set(nv) {
+            if (nv === value) {
+              return;
+            }
+            console.log(nv, "设值了");
+            value = nv;
+          },
+        });
+      }
+      const vm = new Vue({
+        data() {
+          return {
+            a: 1,
+            b: 2,
+          };
+        },
+      });
+      console.log(vm.$data.a);
+      vm.$data.a = 2;
+      console.log(vm.$data.a);
+      console.log(vm.$data.b);
+      vm.$data.b = 3;
+      console.log(vm.$data.b);
+
+      // 看到了没，其实就是这么简单，通过defineProperty就能触发对象属性的监听，
+      // 监听到了，那我们自然就可以根据变化去做我们自己想做的事了
+    </script>
+  </body>
+</html>

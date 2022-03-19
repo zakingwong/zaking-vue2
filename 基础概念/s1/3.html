@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      /*
+            3、Object.create到底干了啥？
+        
+        */
+      // 在响应式的Observer类中，对数组做了一个额外的切片处理。
+      // 也就是对于需要修改原数组的方法，在原型与变量间，做了一层拦截。我们来看下代码
+      let oldArrayProto = Array.prototype;
+      // 1、
+      // let newArrayProto = Object.create(oldArrayProto);
+      // 2、这样效果也一样吧？
+      // let newArrayProto = {};
+      // newArrayProto.__proto__ = oldArrayProto;
+      //3、封装一下试试？
+      let newArrayProto = myCreate(oldArrayProto);
+      console.log(oldArrayProto);
+      console.log(newArrayProto);
+      // 看看这俩玩意有啥区别？
+      // 我们继续
+
+      let methods = [
+        "push",
+        "pop",
+        "shift",
+        "unshift",
+        "reverse",
+        "sort",
+        "splice",
+      ];
+
+      methods.forEach((method) => {
+        newArrayProto[method] = function (...args) {
+          return oldArrayProto[method].call(this, ...args);
+        };
+      });
+      console.log(newArrayProto, "-------");
+      // 我们看这三个console，差不多就能理解了吧。
+      // 上面代码的意思其实就是，创建一个空对象，空对象上绑定了几个会改变原数组的方法，
+      // 执行这些方法，实际上就是执行数组原型上的方法，没区别。
+      // 但是，我想说，Object.create到底干了啥？
+
+      // 实际上，他就干了这事
+      function myCreate(target) {
+        var o = new Object();
+        o.__proto__ = target;
+        return o;
+      }
+      // 这回理解了吧
+    </script>
+  </body>
+</html>

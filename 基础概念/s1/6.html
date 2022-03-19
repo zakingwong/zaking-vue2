@@ -8,8 +8,10 @@
   </head>
   <body></body>
   <script>
+    /*
+      6、为什么Observer类的contructor中，不能这样设置__ob__对象：data.__ob__ = this
+    */
     var data = {};
-
     class Observer {
       constructor(data) {
         // this是个对象，然后
@@ -20,7 +22,9 @@
     function observe(data) {
       return new Observer(data);
     }
-
     observe(data);
+    // 大家可以在src里仔细回顾下这段代码，实际上，从observe调用了开始，
+    // 然后new了一个Observer，然后给data上增加了一个ob对象，然后又observe了一下，
+    // 又new了个Observer，又加了个ob对象，又observe了一下……
   </script>
 </html>
