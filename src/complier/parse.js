@@ -25,7 +25,7 @@ export function parseHTML(html) {
     let node = createASTElement(tag, attrs);
     if (!root) {
       // 是否是空树
-      root = node; // 如果是额话那么当前的节点就是根节点
+      root = node; // 如果是root得话那么当前的节点就是根节点
     }
     if (currentParent) {
       node.parent = currentParent;
@@ -37,11 +37,12 @@ export function parseHTML(html) {
   }
   function chars(text) {
     text = text.replace(/\s/g, "");
-    currentParent.children.push({
-      type: TEXT_TYPE,
-      text,
-      parent: currentParent,
-    });
+    text &&
+      currentParent.children.push({
+        type: TEXT_TYPE,
+        text,
+        parent: currentParent,
+      });
   }
   function end() {
     stack.pop();
@@ -103,5 +104,6 @@ export function parseHTML(html) {
       }
     }
   }
+  console.log(root, "root");
   return root;
 }

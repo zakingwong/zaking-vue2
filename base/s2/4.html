@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // 4、妈的这些函数的执行顺序是啥样的?我有点乱
+      function Vue() {
+        console.log(1);
+
+        this._init();
+        console.log(6);
+      }
+
+      initMixin = function (Vue) {
+        Vue.prototype._init = function () {
+          console.log(4);
+          this.$mount();
+        };
+        console.log(2);
+      };
+      initLifecycle = function (Vue) {
+        console.log(3);
+        Vue.prototype.$mount = function () {
+          console.log(5);
+        };
+      };
+      // 其实就是普通函数的执行嘛~~~
+      initMixin(Vue);
+      initLifecycle(Vue);
+      var vm = new Vue();
+    </script>
+  </body>
+</html>

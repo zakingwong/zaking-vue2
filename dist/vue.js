@@ -260,7 +260,7 @@
 
       if (!root) {
         // 是否是空树
-        root = node; // 如果是额话那么当前的节点就是根节点
+        root = node; // 如果是root得话那么当前的节点就是根节点
       }
 
       if (currentParent) {
@@ -274,7 +274,7 @@
 
     function chars(text) {
       text = text.replace(/\s/g, "");
-      currentParent.children.push({
+      text && currentParent.children.push({
         type: TEXT_TYPE,
         text: text,
         parent: currentParent
@@ -351,6 +351,7 @@
       }
     }
 
+    console.log(root, "root");
     return root;
   }
 
@@ -513,7 +514,6 @@
       var elm = oldVNode;
       var parentElm = elm.parentNode;
       var newElm = createElm(vnode);
-      console.log(newElm);
       parentElm.insertBefore(newElm, elm.nextSibling);
       parentElm.removeChild(elm);
       return newElm;
@@ -522,7 +522,7 @@
 
   function initLifeCycle(Vue) {
     Vue.prototype._update = function (vnode) {
-      console.log("update", vnode);
+      console.log(vnode);
       var vm = this;
       var el = vm.$el;
       vm.$el = patch(el, vnode);

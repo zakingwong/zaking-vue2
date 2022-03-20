@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // 这个是用来匹配{{}}这样的字符串的
+      const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g;
+
+      // 3、如何把AST解析成render函数？
+      // 这个ast就是2.html中生成的ast
+      // 这是简易版的，写不出来那种parent的引用。够用就行。
+      const ast = {
+        attrs: [
+          { name: "id", value: "app" },
+          { name: "key", value: "123" },
+          { name: "style", value: "color: red; background-color: pink" },
+        ],
+        children: [
+          {
+            attrs: [{ name: "style", value: "color: red" }],
+            children: [{ text: "{{name}}", type: 3 }],
+            tag: "div",
+            type: 1,
+          },
+          {
+            text: "{{name}}dadasdsa{{name}}hello",
+            type: 3,
+          },
+          {
+            attrs: [],
+            children: [
+              {
+                text: "{{age}}",
+                type: 3,
+              },
+            ],
+            tag: "span",
+            type: 1,
+          },
+        ],
+        parent: null,
+        tag: "div",
+        type: 1,
+      };
+      function complierToFcuntion() {
+        // 我们现在要做的，其实就是拼接字符串。
+        // 我们先来看看这个codegen干啥了
+        // 1）
+        let code = codegen(ast);
+        console.log(code, "code");
+        console.log(typeof code);
+        //最后的结果就是这样的字符串，注意！这是字符串！！
+        //  _c(
+        //   "div",
+        //   {
+        //     id: "app",
+        //     key: "123",
+        //     style: { color: " red", " background-color": " pink" },
+        //   },
+        //   _c("div", { style: { color: " red" } }, _v(_s(name))),
+        //   _v(_s(name) + "dadasdsa" + _s(name) + "hello"),
+        //   _c("span", null, _v(_s(age)))
+        // );
+        // 最后，我们通过with，和new Function生成一个真正的可执行的函数
+        code = `with(this){return ${code}}`;
+        let render = new Function(code);
+        return render;
+      }
+      // 其实这个codegen方法就是用来生成_c方法的
+      // 看字符串，其实就是解析_c方法的三个参数，标签，属性，子元素
+      function codegen(ast) {
+        // 2)
+        let children = genChildren(ast.children);
+        let code = `_c('${ast.tag}',${
+          ast.attrs.length ? genProps(ast.attrs) : "null"
+        }${ast.children.length ? `,${children}` : ""})`;
+        return code;
+      }
+      // 这个genChildren其实就是gen方法，用字符串“，”分割了罢了
+      function genChildren(children) {
+        if (children) {
+          // 4)
+          return children.map((child) => gen(child)).join(",");
+        }
+      }
+      // 3)
+      // 我们先来看解析属性，比较简单
+      function genProps(attrs) {
+        let str = "";
+        // 我们循环attrs数组，来拼接字符串就好了，拼接成这样'a:1,b:2,v:3,'
+        for (let i = 0; i < attrs.length; i++) {
+          let attr = attrs[i];
+          // 由于style是特殊一点的。我们要额外处理下
+          if (attr.name === "style") {
+            let obj = {};
+            attr.value.split(";").forEach((item) => {
+              let [key, value] = item.split(":");
+              obj[key] = value;
+            });
+            console.log(obj, "style-value"); //{color: ' red', " background-color": ' pink'}
+            // 再设置成该style的value即可
+            attr.value = obj;
+            console.log(attr, "style-attr");
+          }
+          str += `${attr.name}:${JSON.stringify(attr.value)},`;
+        }
+        // 最后我们去除掉最后一个逗号，包裹下对象的“{}”
+        return `{${str.slice(0, -1)}}`;
+      }
+      //4）
+      // 最后我们来看这个复杂的gen方法
+      function gen(node) {
+        if (node.type === 1) {
+          //如果还是个标签，那就递归，codegen里写好了要拼接的字符串
+          return codegen(node);
+        } else {
+          // 如果是个文本，那么有几种情况
+          let text = node.text;
+          if (!defaultTagRE.test(text)) {
+            // 如果匹配不到{{}}这个，那就是普通的文本，直接JSON.stringify返回_v就好了
+            return `_v(${JSON.stringify(text)})`;
+          } else {
+            // 如果有小胡子，那么就会复杂些了
+            // 所以其实你看，到目前为止，转换成render的核心之一就是解析这个小胡子
+            /*
+                所以我们如何解析这个？{{name}}dadasdsa{{name}}hello
+                那，我们需要拼成这样的字符串
+                _s(name) + "xxx" + _s(name) + "xxx"
+                我们来看代码
+            */
+            let tokens = [];
+            let match;
+            // 每一次都从头开始，这事exec的全局的下次匹配，会从匹配后的index开始再匹配
+            defaultTagRE.lastIndex = 0;
+            let lastIndex = 0;
+            // 循环到匹配不到
+            while ((match = defaultTagRE.exec(text))) {
+              // 匹配到的下标
+              console.log(match, "match");
+              console.log(match.index, "match-index");
+              // 记录下标的位置
+              let index = match.index;
+              // 如果下标大于lastIndex
+              // 说明是一个中间的文本，我们也放进去
+              if (index > lastIndex) {
+                tokens.push(JSON.stringify(text.slice(lastIndex, index)));
+              }
+              // 拼凑的匹配到的变量
+              tokens.push(`_s(${match[1].trim()})`);
+              // 把lastIndex往后移动
+              lastIndex = index + match[0].length;
+            }
+            // 这种情况，就说明是匹配完了，后面再没有小胡子了，那就完全是个文本被
+            if (lastIndex < text.length) {
+              tokens.push(JSON.stringify(text.slice(lastIndex)));
+            }
+            // 最后，返回下这个拼接后额字符串
+            return `_v(${tokens.join("+")})`;
+          }
+        }
+      }
+      console.log(complierToFcuntion());
+    </script>
+  </body>
+</html>

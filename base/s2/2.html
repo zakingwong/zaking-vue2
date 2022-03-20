@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body></body>
+  <script>
+    // 2、parseHTML是怎么工作的？或者说字符串模板如何解析成AST得？
+    // $?.待解决问题，这种<br />自结尾的标签的正确解析
+    // const template = `<div id="app" key="123" style="color: red; background-color: pink"><div style="color: red">{{name}}</div>{{name}}dadasdsa{{name}} hello<br /><span>{{age}}</span></div>`;
+    const template = `<div id="app" key="123" style="color: red; background-color: pink">
+        <div style="color: red">{{name}}</div>
+        {{name}}dadasdsa{{name}} hello
+        <span>{{age}}</span>
+        </div>`;
+
+    // 匹配属性的正则。
+    const attribute =
+      /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/;
+    const ncname = `[a-zA-Z_][\\-\\.0-9_a-zA-Z]*`;
+    const qnameCapture = `((?:${ncname}\\:)?${ncname})`;
+    // 匹配标签名，比如这样的：<div>或者带命名空间的标签<div:xxx>
+    const startTagOpen = new RegExp(`^<${qnameCapture}`);
+    // 匹配开始标签的结尾
+    const startTagClose = /^\s*(\/?)>/;
+    // 匹配结束的标签
+    const endTag = new RegExp(`^<\\/${qnameCapture}[^>]*>`);
+
+    function parseHTML(html) {
+      const ELEMENT_TYPE = 1; // NODE_TYPE的类型，代表是元素
+      const TEXT_TYPE = 3; // 同上，代表是文本
+      const stack = []; // 这就是我们要存放AST结果的栈
+      let currentParent; // 当前节点的父节点
+      let root; // 根节点
+      // AST包含的属性
+      function createASTElement(tag, attrs) {
+        return {
+          tag,
+          type: ELEMENT_TYPE,
+          children: [],
+          attrs,
+          parent: null,
+        };
+      }
+      function start(tag, attrs) {
+        let node = createASTElement(tag, attrs);
+        if (!root) {
+          // 是否是空树
+          root = node; // 如果是root是空的话那么当前的节点就是根节点，也就是第一个传进来的节点
+        }
+        // 如果存在当前的父节点，那么把当前node的parent设置为当前的父节点。
+        // 这个还好理解
+        // 如果存在currentParent，说明一定不是根，也就是最外层的元素。
+        if (currentParent) {
+          node.parent = currentParent;
+          currentParent.children.push(node);
+        }
+        // 放进到栈里
+        stack.push(node);
+        // 把当前父节点设置为当前节点
+        currentParent = node;
+      }
+      function end() {
+        // pop方法会从数组的尾部删除，我们用push来添加的话，用pop删除。
+        // 那么也就模拟出了一个先入先出的栈。
+        stack.pop();
+        // 出栈一个元素后，当前作为父节点的元素就要前移一下指针了
+        currentParent = stack[stack.length - 1];
+      }
+      function chars(text) {
+        // 先去除空格
+        text = text.replace(/\s/g, "");
+        // 就是把这个文本放进去就完事了
+        text &&
+          currentParent.children.push({
+            type: TEXT_TYPE,
+            text,
+            parent: currentParent,
+          });
+      }
+      // 前进，也就是删除已解析后的字符串的长度
+      function advance(n) {
+        html = html.substring(n);
+      }
+      // 解析开始标签
+      function parseStartTag() {
+        const start = html.match(startTagOpen);
+        console.log(start, "-startTag-");
+        if (start) {
+          const match = {
+            tagName: start[1],
+            attrs: [],
+          };
+          advance(start[0].length);
+          // 如果不是开始标签的结束，就一直匹配下去
+          let attr, end;
+          // 开始匹配属性，不是结束，但是存在属性
+          while (
+            !(end = html.match(startTagClose)) &&
+            (attr = html.match(attribute))
+          ) {
+            console.log(attr, "-startTag_attr-");
+            console.log(end, "-startTag_close-");
+            advance(attr[0].length);
+            // 要注意，拿到的这个attr[1],attr[3]什么的，跟你写的正则有关系，也就是正则的分组
+            match.attrs.push({
+              name: attr[1],
+              value: attr[3] || attr[4] || attr[5] || true,
+            });
+          }
+          // 因为上面，在判断的时候就赋值了，所以一旦有结束，就不会再循环，
+          // 就可以走到这个条件了
+          if (end) {
+            advance(end[0].length);
+          }
+          // 返回这个match对象
+          return match;
+        }
+        // 没有start直接返回false
+        return false;
+      }
+      // 如果html模板字符串不为空，那么就一直解析
+      // 1）
+      while (html) {
+        let textEnd = html.indexOf("<");
+        // 如果textEnd是0，也就是说明是一个标签，可能是开始标签，也可能是结束标签
+        // 反正就肯定是个标签
+        if (textEnd === 0) {
+          // 我们就先来匹配开始标签
+          // 这里我们拿到的就是一个包含开始标签的标签名及其属性的对象。
+          // 2）
+          const startTagMatch = parseStartTag();
+          // 如果存在的话，那么我们就走一下start方法
+          if (startTagMatch) {
+            // 5）我们开始解析开始标签
+            start(startTagMatch.tagName, startTagMatch.attrs);
+            continue;
+          }
+          // 3）
+          // 我们来解析下结束标签
+          let endTagMatch = html.match(endTag);
+          if (endTagMatch) {
+            console.log(endTagMatch, "-endTag-");
+            advance(endTagMatch[0].length);
+            // 6）
+            end(endTagMatch[1]);
+            continue;
+          }
+        }
+        // 如果大于0，那说明啥？比如这样的模板 `class="app" ><div></div></div>`
+        // 说明之前还有东西，我们要匹配的是文本节点，也就是内容，为啥呢？
+        // 因为startTagMatch，已经把开始标签和属性截取掉了
+        // 然后endTagMatch就截取了结束标签
+        // 大于0的情况，就是文本内容了
+        // 4）到这里，我们已经可以完全的解析所有的文本模板了，下面，我们就要把它变成AST了
+        if (textEnd > 0) {
+          let text = html.substring(0, textEnd);
+          console.log(textEnd, text, "-text-");
+          if (text) {
+            // 7）最后来解析文本节点
+            chars(text);
+            advance(text.length);
+          }
+        }
+      }
+      // 最后我们来看下这个root，也就是解析后的AST
+      console.log(root, "ROOT");
+      return root;
+    }
+    // 我们拿到了AST
+    parseHTML(template);
+  </script>
+</html>

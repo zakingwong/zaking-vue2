@@ -32,7 +32,6 @@ function patch(oldVNode, vnode) {
     const elm = oldVNode;
     const parentElm = elm.parentNode;
     let newElm = createElm(vnode);
-    console.log(newElm);
     parentElm.insertBefore(newElm, elm.nextSibling);
     parentElm.removeChild(elm);
     return newElm;
@@ -43,7 +42,7 @@ function patch(oldVNode, vnode) {
 
 export function initLifeCycle(Vue) {
   Vue.prototype._update = function (vnode) {
-    console.log("update", vnode);
+    console.log(vnode);
     const vm = this;
     const el = vm.$el;
     vm.$el = patch(el, vnode);
