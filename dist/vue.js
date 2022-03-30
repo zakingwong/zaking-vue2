@@ -134,6 +134,40 @@
     };
   });
 
+  var id$1 = 0; // 属性的dep要收集watcher
+
+  var Dep = /*#__PURE__*/function () {
+    function Dep() {
+      _classCallCheck(this, Dep);
+
+      this.id = id$1++;
+      this.subs = []; // 这里存放对应属性得watcher有哪些
+    }
+
+    _createClass(Dep, [{
+      key: "addSub",
+      value: function addSub(watcher) {
+        this.subs.push(watcher);
+      }
+    }, {
+      key: "depend",
+      value: function depend() {
+        // 这里不希望放置重复得watcher
+        // this.subs.push(Dep.target);
+        Dep.target.addDep(this);
+      }
+    }, {
+      key: "notify",
+      value: function notify() {
+        this.subs.forEach(function (watcher) {
+          return watcher.update();
+        });
+      }
+    }]);
+
+    return Dep;
+  }();
+
   var Observer = /*#__PURE__*/function () {
     function Observer(data) {
       _classCallCheck(this, Observer);
@@ -176,8 +210,13 @@
 
   function defineReactive(target, key, value) {
     observe(value);
+    var dep = new Dep();
     Object.defineProperty(target, key, {
       get: function get() {
+        if (Dep.target) {
+          dep.depend(); // 让这个属性得收集器记住这个watcher
+        }
+
         return value;
       },
       set: function set(nv) {
@@ -187,6 +226,7 @@
 
         observe(nv);
         value = nv;
+        dep.notify();
       }
     });
   }
@@ -442,6 +482,53 @@
     return render;
   }
 
+  var id = 0; // 每个属性有一个dep（属性就是被观察者），watcher就是观察者（属性变化了会通知观察者来更新）
+
+  var Watcher = /*#__PURE__*/function () {
+    // 不同的组件有不同得watcher，目前只有一个，渲染跟实例
+    function Watcher(vm, fn, options) {
+      _classCallCheck(this, Watcher);
+
+      this.id = id++;
+      this.renderWatcher = options; // 标识是一个渲染watcher
+
+      this.getter = fn; // 意味着调用这个函数可以发生取值操作
+
+      this.deps = []; // 后续实现计算属性和清理工作需要用到
+
+      this.depsId = new Set();
+      this.get();
+    } // 一个视图对应多个属性，重复得属性也不用记录
+
+
+    _createClass(Watcher, [{
+      key: "addDep",
+      value: function addDep(dep) {
+        var id = dep.id;
+
+        if (!this.depsId.has(id)) {
+          this.deps.push(dep);
+          this.depsId.add(id);
+          dep.addSub(this); // watcher已经记住dep了，现在需要dep也记住watcher
+        }
+      }
+    }, {
+      key: "get",
+      value: function get() {
+        Dep.target = this;
+        this.getter();
+        Dep.target = null;
+      }
+    }, {
+      key: "update",
+      value: function update() {
+        this.get(); // 重新渲染
+      }
+    }]);
+
+    return Watcher;
+  }(); // 需要给每一个属性增加一个dep，目的就是收集watcher
+
   function createElementVNode(vm, tag) {
     var data = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
@@ -552,7 +639,13 @@
     // 插入到el中
     vm.$el = el;
 
-    vm._update(vm._render());
+    var updateComponent = function updateComponent() {
+      console.log("---");
+
+      vm._update(vm._render());
+    };
+
+    new Watcher(vm, updateComponent, true); // 用true标识是渲染watcher
   }
 
   function initMixin(Vue) {
