@@ -391,7 +391,6 @@
       }
     }
 
-    console.log(root, "root");
     return root;
   }
 
@@ -693,7 +692,6 @@
 
   function initLifeCycle(Vue) {
     Vue.prototype._update = function (vnode) {
-      console.log(vnode);
       var vm = this;
       var el = vm.$el;
       vm.$el = patch(el, vnode);
@@ -724,8 +722,6 @@
     vm.$el = el;
 
     var updateComponent = function updateComponent() {
-      console.log("---");
-
       vm._update(vm._render());
     };
 

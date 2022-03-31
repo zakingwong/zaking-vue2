@@ -43,7 +43,6 @@ function patch(oldVNode, vnode) {
 
 export function initLifeCycle(Vue) {
   Vue.prototype._update = function (vnode) {
-    console.log(vnode);
     const vm = this;
     const el = vm.$el;
     vm.$el = patch(el, vnode);
@@ -71,7 +70,6 @@ export function mountComponent(vm, el) {
   // 插入到el中
   vm.$el = el;
   const updateComponent = () => {
-    console.log("---");
     vm._update(vm._render());
   };
   new Watcher(vm, updateComponent, true); // 用true标识是渲染watcher

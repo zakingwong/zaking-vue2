@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+  <script>
+    Vue.mixin({
+      created() {
+        console.log("minx1-created");
+      },
+    });
+    Vue.mixin({
+      created() {
+        console.log("minx2-created");
+      },
+    });
+    console.log(Vue.options);
+    const vm = new Vue({
+      data() {
+        return {
+          name: "zaking",
+          age: 20,
+          address: {
+            a: 1,
+            b: 2,
+          },
+          hobby: ["eat", "drink", { a: 3 }],
+        };
+      },
+      el: "#app",
+      created() {
+        console.log("created");
+      },
+    });
+  </script>
+</html>

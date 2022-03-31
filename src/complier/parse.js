@@ -104,6 +104,5 @@ export function parseHTML(html) {
       }
     }
   }
-  console.log(root, "root");
   return root;
 }

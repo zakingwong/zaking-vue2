@@ -10,4 +10,5 @@ Vue.prototype.$nextTick = nextTick;
 
 initMixin(Vue);
 initLifeCycle(Vue);
+
 export default Vue;
