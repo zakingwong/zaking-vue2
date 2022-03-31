@@ -24,12 +24,20 @@
       // vm.name = "zakingwong";
       // vm.age = 30;
       vm.$mount("#app");
-      setTimeout(() => {
-        vm.name = "zakingwong";
-        vm.age = 30;
-        console.log("settimeout");
-        // vm._update(vm._render());
-      }, 2000);
+      // setTimeout(() => {
+      //   vm.name = "zakingwong";
+      //   vm.age = 30;
+      //   vm.name = "zakingwong1";
+      //   vm.age = 301;
+      //   vm.name = "zakingwong2";
+      //   vm.age = 302;
+      //   console.log("settimeout");
+      //   // vm._update(vm._render());
+      // }, 2000);
+      vm.name = "zk";
+      vm.$nextTick(() => {
+        console.log(document.querySelector("#app").innerHTML);
+      });
     </script>
   </body>
 </html>

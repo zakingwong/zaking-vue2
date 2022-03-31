@@ -522,12 +522,96 @@
     }, {
       key: "update",
       value: function update() {
-        this.get(); // 重新渲染
+        queueWatcher(this); // this.get(); // 重新渲染
+      }
+    }, {
+      key: "run",
+      value: function run() {
+        this.get();
       }
     }]);
 
     return Watcher;
-  }(); // 需要给每一个属性增加一个dep，目的就是收集watcher
+  }();
+
+  var queue = [];
+  var has = {};
+  var pending = false;
+
+  function flushSchedulerQueue() {
+    var flushQueue = queue.slice(0);
+    queue = [];
+    has = {};
+    pending = false;
+    flushQueue.forEach(function (q) {
+      return q.run();
+    });
+  }
+
+  function queueWatcher(watcher) {
+    var id = watcher.id;
+
+    if (!has[id]) {
+      queue.push(watcher);
+      has[id] = true;
+
+      if (!pending) {
+        nextTick(flushSchedulerQueue);
+        pending = true;
+      }
+    }
+  }
+
+  var callbacks = [];
+  var waiting = false;
+
+  function flushCallbacks() {
+    var cbs = callbacks.slice(0);
+    waiting = false;
+    callbacks = [];
+    cbs.forEach(function (cb) {
+      return cb();
+    });
+  }
+
+  var timerFunc;
+
+  if (Promise) {
+    timerFunc = function timerFunc() {
+      Promise.resolve().then(flushCallbacks);
+    };
+  } else if (MutationObserver) {
+    var observer = new MutationObserver(flushCallbacks);
+    var textNode = document.createTextNode(1);
+    observer.observe(textNode, {
+      characterData: true
+    });
+
+    timerFunc = function timerFunc() {
+      textNode.textContent = 2;
+    };
+  } else if (setImmediate) {
+    timerFunc = function timerFunc() {
+      setImmediate(flushCallbacks);
+    };
+  } else {
+    timerFunc = function timerFunc() {
+      setTimeout(flushCallbacks);
+    };
+  }
+
+  function nextTick(cb) {
+    callbacks.push(cb);
+
+    if (!waiting) {
+      timerFunc(); // Promise.resolve().then(flushCallbacks);
+      // setTimeout(() => {
+      //   flushCallbacks();
+      // }, 0);
+
+      waiting = true;
+    }
+  } // 需要给每一个属性增加一个dep，目的就是收集watcher
 
   function createElementVNode(vm, tag) {
     var data = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -690,6 +774,7 @@
     this._init(options);
   }
 
+  Vue.prototype.$nextTick = nextTick;
   initMixin(Vue);
   initLifeCycle(Vue);
 
