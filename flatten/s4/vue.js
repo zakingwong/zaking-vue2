@@ -389,7 +389,9 @@ function mountComponent(vm, el) {
 
 function Vue(options) {
   const vm = this;
-  vm.$options = options;
+  // vm.$options = options;
+  vm.$options = mergeOptions(this.constructor.options, options);
+  callHook(vm, "beforeCreated");
   const opts = vm.$options;
   if (opts.data) {
     let data = vm.$options.data;
@@ -400,6 +402,7 @@ function Vue(options) {
       proxy(vm, "_data", key);
     }
   }
+  callHook(vm, "created");
   if (options.el) {
     vm.$mount(options.el);
   }
@@ -471,10 +474,143 @@ class Watcher {
     Dep.target = null;
   }
   update() {
+    queueWatcher(this);
+  }
+  run() {
     this.get();
   }
 }
 
+// 3、
+let queue = [];
+let has = {};
+let pending = false;
+
+function flushSchedulerQueue() {
+  console.log(queue, "queue");
+  let flushQueue = queue.slice(0);
+  queue = [];
+  has = {};
+  pending = false;
+  flushQueue.forEach((q) => q.run());
+}
+
+function queueWatcher(watcher) {
+  const id = watcher.id;
+  if (!has[id]) {
+    queue.push(watcher);
+    has[id] = true;
+    if (!pending) {
+      nextTick(flushSchedulerQueue, 0);
+      pending = true;
+    }
+  }
+}
+
+// 4、nextTick
+let callbacks = [];
+let waiting = false;
+function flushCallbacks() {
+  let cbs = callbacks.slice(0);
+  waiting = false;
+  callbacks = [];
+  cbs.forEach((cb) => cb());
+}
+
+let timerFunc;
+if (Promise) {
+  timerFunc = () => {
+    Promise.resolve().then(flushCallbacks);
+  };
+} else if (MutationObserver) {
+  let observer = new MutationObserver(flushCallbacks);
+  let textNode = document.createTextNode(1);
+  observer.observe(textNode, {
+    characterData: true,
+  });
+  timerFunc = () => {
+    textNode.textContent = 2;
+  };
+} else if (setImmediate) {
+  timerFunc = () => {
+    setImmediate(flushCallbacks);
+  };
+} else {
+  timerFunc = () => {
+    setTimeout(flushCallbacks);
+  };
+}
+function nextTick(cb) {
+  callbacks.push(cb);
+  if (!waiting) {
+    timerFunc();
+    // Promise.resolve().then(flushCallbacks);
+    // setTimeout(() => {
+    //   flushCallbacks();
+    // }, 0);
+    waiting = true;
+  }
+}
+
+Vue.prototype.$nextTick = nextTick;
+
+// 4、mixin
+
+const strats = {};
+const LIFECYCLE = ["beforeCreate", "created"];
+LIFECYCLE.forEach((hook) => {
+  strats[hook] = function (p, c) {
+    console.log(p, c);
+    if (c) {
+      if (p) {
+        return p.concat(c);
+      } else {
+        return [c];
+      }
+    } else {
+      return p;
+    }
+  };
+});
+
+function mergeOptions(parent, child) {
+  const options = {};
+  for (let key in parent) {
+    mergeField(key);
+  }
+  for (let key in child) {
+    if (!parent.hasOwnProperty(key)) {
+      mergeField(key);
+    }
+  }
+
+  function mergeField(key) {
+    if (strats[key]) {
+      options[key] = strats[key](parent[key], child[key]);
+    } else {
+      options[key] = child[key] || parent[key];
+    }
+  }
+  return options;
+}
+
+function initGlobalAPI(Vue) {
+  Vue.options = {};
+
+  Vue.mixin = function (mixin) {
+    this.options = mergeOptions(this.options, mixin);
+    return this;
+  };
+}
+
+function callHook(vm, hook) {
+  const handlers = vm.$options[hook];
+  if (handlers) {
+    handlers.forEach((handler) => handler.call(vm));
+  }
+}
+
+initGlobalAPI(Vue);
 init(Vue);
 initLifeCycle(Vue);
 // 所以其实你看这些，我就是拼凑了一下

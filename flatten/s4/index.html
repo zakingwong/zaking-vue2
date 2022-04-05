@@ -7,9 +7,20 @@
     <title>Document</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">{{name}}</div>
     <script src="vue.js"></script>
     <script>
+      Vue.mixin({
+        created() {
+          console.log("minx1-created");
+        },
+      });
+      Vue.mixin({
+        created() {
+          console.log("minx2-created");
+        },
+      });
+      console.log(Vue.options);
       const vm = new Vue({
         data() {
           return {
@@ -23,6 +34,13 @@
           };
         },
         el: "#app",
+        created() {
+          console.log("created");
+        },
+      });
+      vm.name = "123";
+      vm.$nextTick(() => {
+        console.log(document.querySelector("#app").innerHTML);
       });
     </script>
   </body>
