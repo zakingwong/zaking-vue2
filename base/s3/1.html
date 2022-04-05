@@ -18,7 +18,7 @@
         }
         addDep(dep) {
           this.deps.push(dep);
-          dep.addSub(this);
+          dep.addWatcher(this);
         }
         get() {
           Dep.target = this;
@@ -33,20 +33,21 @@
         constructor() {
           this.subs = [];
         }
-        addSub(watcher) {
+        addWatcher(watcher) {
           this.subs.push(watcher);
+          console.log(this.subs);
         }
         depend() {
           Dep.target.addDep(this);
         }
         notify() {
-          this.subs.forEach((watcher) => watcher.update());
+          console.log("--");
+          this.subs.forEach((watcher) => {
+            console.log(watcher);
+            watcher.update();
+          });
         }
       }
-      var obj = {
-        a: 1,
-        b: 2,
-      };
 
       function defineReactive(target, key, value) {
         let dep = new Dep();
@@ -69,10 +70,14 @@
           },
         });
       }
-      Object.keys(obj).forEach((key) => defineReactive(obj, key, obj[key]));
+      var obj = {
+        a: 1,
+        b: 2,
+      };
       new Watcher(() => {
         console.log("reRender");
       });
+      Object.keys(obj).forEach((key) => defineReactive(obj, key, obj[key]));
 
       setTimeout(() => {
         console.log("---setTimeout---");

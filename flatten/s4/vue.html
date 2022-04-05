@@ -8,7 +8,7 @@
     <title>Document</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">{{name}}</div>
   </body>
   <script>
     Vue.mixin({
@@ -38,6 +38,10 @@
       created() {
         console.log("created");
       },
+    });
+    vm.name = "123";
+    vm.$nextTick(() => {
+      console.log(document.querySelector("#app").innerHTML);
     });
   </script>
 </html>
