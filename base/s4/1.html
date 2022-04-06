@@ -12,27 +12,141 @@
       // 1.1、完美的对象合并
       // 首先，合并对象需要穷尽场景，也就是对象的属性可能有哪些
       const obj = {
-        number: 1,
-        boolean: true,
-        symbol: new Symbol("c"),
-        string: "string",
-        func: function () {
+        number_1: 1,
+        boolean_1: true,
+        symbol_1: Symbol("c"),
+        string_1: "string",
+        undefined_1: undefined,
+        null_1: null,
+        func_1: function () {
           console.log(this.symbol);
         },
-        undefined: undefined,
-        null: null,
-        inner_obj: {
-          inner_number: 1,
-          inner_boolean: true,
-          inner_symbol: new Symbol("c"),
-          inner_string: "string",
-          inner_func: function () {
+        array_1: [1, 2, 3, 4, 5],
+        inner_obj_1: {
+          inner_number_1: 1,
+          inner_boolean_1: true,
+          inner_symbol_1: Symbol("c"),
+          inner_string_1: "string",
+          array_1: [1, 2, 3, 4, 5],
+          inner_func_1: function () {
             console.log(this.symbol);
           },
-          inner_undefined: undefined,
-          inner_null: null,
+          inner_undefined_1: undefined,
+          inner_null_1: null,
+          deep_obj_1: {
+            a_1: 1,
+            b_1: undefined,
+          },
         },
       };
+      // 差不多好像就这么多了。
+      // 然后我们还要分析合并的场景
+      // 我们约定：
+      // 1、不考虑源对象上的原型属性。
+      // 2、undefined值参与合并
+      // 3、需要递归合并
+      // 4、不需要customizer
+      // OK，现在我们有了规则，那么我们就可以开始写合并的代码了
+
+      function isPlainObject(val) {
+        if (toString.call(val) !== "[object Object]") {
+          return false;
+        }
+
+        var prototype = Object.getPrototypeOf(val);
+        return prototype === null || prototype === Object.prototype;
+      }
+
+      function forEach(obj, fn) {
+        if (obj === null || typeof obj === "undefined") {
+          return;
+        }
+
+        // 如果obj不是一个对象，那就强制转换成数组
+        if (typeof obj !== "object") {
+          obj = [obj];
+        }
+
+        // 简单说就是，数组就for，对象就forin
+        if (Array.isArray(obj)) {
+          // 数组的话那就直接for循环遍历，回调函数直接调用
+          for (var i = 0, l = obj.length; i < l; i++) {
+            fn.call(null, obj[i], i, obj);
+          }
+        } else {
+          // 对象的话，也类似，就用for in
+          for (var key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+              fn.call(null, obj[key], key, obj);
+            }
+          }
+        }
+      }
+      function merge(/* obj1, obj2, obj3, ... */) {
+        var result = {};
+        function assignValue(val, key) {
+          if (isPlainObject(result[key]) && isPlainObject(val)) {
+            console.log(key, "1");
+            result[key] = merge(result[key], val);
+          } else if (isPlainObject(val)) {
+            console.log(key, "2");
+            result[key] = merge({}, val);
+          } else if (Array.isArray(val)) {
+            console.log(key, "3");
+            result[key] = val.slice();
+          } else {
+            result[key] = val;
+            console.log(key, "4");
+          }
+        }
+
+        for (var i = 0, l = arguments.length; i < l; i++) {
+          forEach(arguments[i], assignValue);
+        }
+        return result;
+      }
+
+      const obj1 = {};
+      const result_1 = merge(obj1, obj, obj);
+      console.log(result_1, "result_1");
+
+      const obj2 = {
+        number_2: 1,
+        boolean_2: true,
+        symbol_2: Symbol("c"),
+        string_2: "string",
+        undefined_2: undefined,
+        null_2: null,
+        func_2: function () {
+          console.log(this.symbol);
+        },
+        array_2: [1, 2, 3, 4, 5],
+        inner_obj_2: {
+          inner_number_2: 1,
+          inner_boolean_2: true,
+          inner_symbol_2: Symbol("c"),
+          inner_string_2: "string",
+          array_2: [1, 2, 3, 4, 5],
+          inner_func_2: function () {
+            console.log(this.symbol);
+          },
+          inner_undefined_2: undefined,
+          inner_null_2: null,
+          deep_obj_2: {
+            a_2: 1,
+            b_2: undefined,
+          },
+        },
+      };
+
+      const result_2 = merge(obj, obj2);
+      console.log(result_2, "result_2");
+
+      // 这段代码抄自axios源码
+
+      // 那顺便说下，目前为止哈，mixin中的合并，其实非常简单，
+      // 就是针对某一个生命周期，添加合并逻辑，有你没我，有我没你，你我并存
+      // 这样的逻辑
     </script>
   </body>
 </html>
