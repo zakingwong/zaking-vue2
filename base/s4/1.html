@@ -10,6 +10,29 @@
     <script>
       // 1、mergeOptions的最佳实践
       // 1.1、完美的对象合并
+      // 首先，合并对象需要穷尽场景，也就是对象的属性可能有哪些
+      const obj = {
+        number: 1,
+        boolean: true,
+        symbol: new Symbol("c"),
+        string: "string",
+        func: function () {
+          console.log(this.symbol);
+        },
+        undefined: undefined,
+        null: null,
+        inner_obj: {
+          inner_number: 1,
+          inner_boolean: true,
+          inner_symbol: new Symbol("c"),
+          inner_string: "string",
+          inner_func: function () {
+            console.log(this.symbol);
+          },
+          inner_undefined: undefined,
+          inner_null: null,
+        },
+      };
     </script>
   </body>
 </html>

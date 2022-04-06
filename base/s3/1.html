@@ -10,6 +10,23 @@
     <script>
       // 1、我们来实现一个最小化的watcher和dep
 
+      class Dep {
+        constructor() {
+          this.subs = [];
+        }
+        addWatcher(watcher) {
+          this.subs.push(watcher);
+        }
+        depend() {
+          Dep.target.addDep(this);
+        }
+        notify() {
+          this.subs.forEach((watcher) => {
+            watcher.update();
+          });
+        }
+      }
+
       class Watcher {
         constructor(fn) {
           this.getter = fn;
@@ -23,35 +40,17 @@
         get() {
           Dep.target = this;
           this.getter();
-          Dep.target = null;
+          // 这里为啥把它删了，因为咱们是一次性的玩具，在真实场景里，每次当我们设置值的时候，都会在constructor中走get，并走完Watcher渲染。
+          // 所以需要及时删除，但是此处，咱们并没有真正的响应机制。
+          // Dep.target = null;
         }
         update() {
           this.get();
         }
       }
-      class Dep {
-        constructor() {
-          this.subs = [];
-        }
-        addWatcher(watcher) {
-          this.subs.push(watcher);
-          console.log(this.subs);
-        }
-        depend() {
-          Dep.target.addDep(this);
-        }
-        notify() {
-          console.log("--");
-          this.subs.forEach((watcher) => {
-            console.log(watcher);
-            watcher.update();
-          });
-        }
-      }
 
       function defineReactive(target, key, value) {
         let dep = new Dep();
-
         Object.defineProperty(target, key, {
           get() {
             if (Dep.target) {
@@ -74,15 +73,22 @@
         a: 1,
         b: 2,
       };
+      // 这个就是触发回调，在真实的场景里，这块会触发渲染watcher。
       new Watcher(() => {
         console.log("reRender");
       });
+      // 绑定响应式
       Object.keys(obj).forEach((key) => defineReactive(obj, key, obj[key]));
-
+      // 这里调用了一下obj.a，其目的是为了模拟解析模板时读取值的情况
+      obj.a;
       setTimeout(() => {
-        console.log("---setTimeout---");
+        console.log("---setTimeout-a-2-");
         obj.a = 2;
       }, 2000);
+      setTimeout(() => {
+        console.log("---setTimeout-a-3-");
+        obj.a = 3;
+      }, 3000);
     </script>
   </body>
 </html>
