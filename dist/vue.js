@@ -8,8 +8,6 @@
   var LIFECYCLE = ["beforeCreate", "created"];
   LIFECYCLE.forEach(function (hook) {
     strats[hook] = function (p, c) {
-      console.log(p, c);
-
       if (c) {
         if (p) {
           return p.concat(c);
@@ -417,7 +415,10 @@
       this.deps = []; // 后续实现计算属性和清理工作需要用到
 
       this.depsId = new Set();
-      this.get();
+      this.lazy = options.lazy;
+      this.dirty = this.lazy;
+      this.vm = vm;
+      this.lazy ? undefined : this.get();
     } // 一个视图对应多个属性，重复得属性也不用记录
 
 
@@ -433,16 +434,37 @@
         }
       }
     }, {
+      key: "evaluate",
+      value: function evaluate() {
+        this.value = this.get();
+        this.dirty = false;
+      }
+    }, {
       key: "get",
       value: function get() {
         pushTarget(this);
-        this.getter();
+        var value = this.getter.call(this.vm);
         popTarget();
+        return value;
+      }
+    }, {
+      key: "depend",
+      value: function depend() {
+        var i = this.deps.length;
+
+        while (i--) {
+          this.deps[i].depend();
+        }
       }
     }, {
       key: "update",
       value: function update() {
-        queueWatcher(this); // this.get(); // 重新渲染
+        if (this.lazy) {
+          this.dirty = true;
+        } else {
+          queueWatcher(this);
+        } // this.get(); // 重新渲染
+
       }
     }, {
       key: "run",
@@ -804,22 +826,42 @@
 
   function initComputed(vm) {
     var computed = vm.$options.computed;
+    var watchers = vm._computedWatchers = {};
 
     for (var key in computed) {
       var userDef = computed[key];
+      var fn = typeof userDef === "function" ? userDef : userDef.get;
+      watchers[key] = new Watcher(vm, fn, {
+        lazy: true
+      });
       defineComputed(vm, key, userDef);
     }
   }
 
   function defineComputed(target, key, userDef) {
-    var getter = typeof userDef === "function" ? userDef : userDef.get;
-
+    // const getter = typeof userDef === "function" ? userDef : userDef.get;
     var setter = userDef.set || function () {};
 
     Object.defineProperty(target, key, {
-      get: getter,
+      get: createComputedGetter(key),
       set: setter
     });
+  }
+
+  function createComputedGetter(key) {
+    return function () {
+      var watcher = this._computedWatchers[key];
+
+      if (watcher.dirty) {
+        watcher.evaluate();
+      }
+
+      if (Dep.target) {
+        watcher.depend();
+      }
+
+      return watcher.value;
+    };
   }
 
   function initMixin(Vue) {

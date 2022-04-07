@@ -2,7 +2,6 @@ const strats = {};
 const LIFECYCLE = ["beforeCreate", "created"];
 LIFECYCLE.forEach((hook) => {
   strats[hook] = function (p, c) {
-    console.log(p, c);
     if (c) {
       if (p) {
         return p.concat(c);

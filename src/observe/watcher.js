@@ -1,4 +1,4 @@
-import Dep, { popTarget, pushTarget } from "./dep";
+import { popTarget, pushTarget } from "./dep";
 
 let id = 0;
 
@@ -12,7 +12,10 @@ class Watcher {
     this.getter = fn; // 意味着调用这个函数可以发生取值操作
     this.deps = []; // 后续实现计算属性和清理工作需要用到
     this.depsId = new Set();
-    this.get();
+    this.lazy = options.lazy;
+    this.dirty = this.lazy;
+    this.vm = vm;
+    this.lazy ? undefined : this.get();
   }
   // 一个视图对应多个属性，重复得属性也不用记录
   addDep(dep) {
@@ -23,13 +26,28 @@ class Watcher {
       dep.addSub(this); // watcher已经记住dep了，现在需要dep也记住watcher
     }
   }
+  evaluate() {
+    this.value = this.get();
+    this.dirty = false;
+  }
   get() {
     pushTarget(this);
-    this.getter();
+    let value = this.getter.call(this.vm);
     popTarget();
+    return value;
+  }
+  depend() {
+    let i = this.deps.length;
+    while (i--) {
+      this.deps[i].depend();
+    }
   }
   update() {
-    queueWatcher(this);
+    if (this.lazy) {
+      this.dirty = true;
+    } else {
+      queueWatcher(this);
+    }
     // this.get(); // 重新渲染
   }
   run() {
