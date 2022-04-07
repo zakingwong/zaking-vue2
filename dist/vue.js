@@ -727,6 +727,7 @@
         ob.observeArray(inserted);
       }
 
+      ob.dep.notify();
       return result;
     };
   });
@@ -735,7 +736,8 @@
     function Observer(data) {
       _classCallCheck(this, Observer);
 
-      // data.__ob__ = this;
+      this.dep = new Dep(); // data.__ob__ = this;
+
       Object.defineProperty(data, "__ob__", {
         value: this,
         enumerable: false
@@ -771,13 +773,32 @@
     return Observer;
   }();
 
+  function dependArray(value) {
+    for (var i = 0; i < value.length; i++) {
+      var current = value[i];
+      current.__ob__ && current.__ob__.dep.depend();
+
+      if (Array.isArray(current)) {
+        dependArray(current);
+      }
+    }
+  }
+
   function defineReactive(target, key, value) {
-    observe(value);
+    var childOb = observe(value);
     var dep = new Dep();
     Object.defineProperty(target, key, {
       get: function get() {
         if (Dep.target) {
           dep.depend(); // 让这个属性得收集器记住这个watcher
+
+          if (childOb) {
+            childOb.dep.depend();
+
+            if (Array.isArray(value)) {
+              dependArray(value);
+            }
+          }
         }
 
         return value;
