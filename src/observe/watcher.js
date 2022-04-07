@@ -1,4 +1,4 @@
-import Dep from "./dep";
+import Dep, { popTarget, pushTarget } from "./dep";
 
 let id = 0;
 
@@ -24,9 +24,9 @@ class Watcher {
     }
   }
   get() {
-    Dep.target = this;
+    pushTarget(this);
     this.getter();
-    Dep.target = null;
+    popTarget();
   }
   update() {
     queueWatcher(this);

@@ -148,180 +148,6 @@
     throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
-  // 重写数组中的部分方法
-  var oldArrayProto = Array.prototype;
-  var newArrayProto = Object.create(oldArrayProto);
-  var methods = ["push", "pop", "shift", "unshift", "reverse", "sort", "splice"];
-  methods.forEach(function (method) {
-    newArrayProto[method] = function () {
-      var _oldArrayProto$method;
-
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-      }
-
-      // 这个this是调用方法的那个数组
-      var result = (_oldArrayProto$method = oldArrayProto[method]).call.apply(_oldArrayProto$method, [this].concat(args));
-
-      var inserted;
-      var ob = this.__ob__;
-
-      switch (method) {
-        case "push":
-        case "unshift":
-          inserted = args;
-          break;
-
-        case "splice":
-          inserted = args.slice(2);
-      }
-
-      if (inserted) {
-        ob.observeArray(inserted);
-      }
-
-      return result;
-    };
-  });
-
-  var id$1 = 0; // 属性的dep要收集watcher
-
-  var Dep = /*#__PURE__*/function () {
-    function Dep() {
-      _classCallCheck(this, Dep);
-
-      this.id = id$1++;
-      this.subs = []; // 这里存放对应属性得watcher有哪些
-    }
-
-    _createClass(Dep, [{
-      key: "addSub",
-      value: function addSub(watcher) {
-        this.subs.push(watcher);
-      }
-    }, {
-      key: "depend",
-      value: function depend() {
-        // 这里不希望放置重复得watcher
-        // this.subs.push(Dep.target);
-        Dep.target.addDep(this);
-      }
-    }, {
-      key: "notify",
-      value: function notify() {
-        this.subs.forEach(function (watcher) {
-          return watcher.update();
-        });
-      }
-    }]);
-
-    return Dep;
-  }();
-
-  var Observer = /*#__PURE__*/function () {
-    function Observer(data) {
-      _classCallCheck(this, Observer);
-
-      // data.__ob__ = this;
-      Object.defineProperty(data, "__ob__", {
-        value: this,
-        enumerable: false
-      });
-
-      if (Array.isArray(data)) {
-        // 重写数组的方法，7个变异方法，这些方法可以修改数组本身
-        // 除了数组，数组内的引用类型也要劫持
-        data.__proto__ = newArrayProto; // 需要保留数组原有的特性，并且可以重写部分方法
-
-        this.observeArray(data);
-      } else {
-        this.walk(data);
-      }
-    }
-
-    _createClass(Observer, [{
-      key: "walk",
-      value: function walk(data) {
-        Object.keys(data).forEach(function (key) {
-          return defineReactive(data, key, data[key]);
-        });
-      }
-    }, {
-      key: "observeArray",
-      value: function observeArray(data) {
-        data.forEach(function (item) {
-          return observe(item);
-        });
-      }
-    }]);
-
-    return Observer;
-  }();
-
-  function defineReactive(target, key, value) {
-    observe(value);
-    var dep = new Dep();
-    Object.defineProperty(target, key, {
-      get: function get() {
-        if (Dep.target) {
-          dep.depend(); // 让这个属性得收集器记住这个watcher
-        }
-
-        return value;
-      },
-      set: function set(nv) {
-        if (nv === value) {
-          return;
-        }
-
-        observe(nv);
-        value = nv;
-        dep.notify();
-      }
-    });
-  }
-  function observe(data) {
-    if (_typeof(data) !== "object" || data === null) {
-      return;
-    }
-
-    if (data.__ob__ instanceof Observer) {
-      return data.__ob__;
-    }
-
-    return new Observer(data);
-  }
-
-  function initState(vm) {
-    var opts = vm.$options;
-
-    if (opts.data) {
-      initData(vm);
-    }
-  }
-
-  function proxy(vm, target, key) {
-    Object.defineProperty(vm, key, {
-      get: function get() {
-        return vm[target][key];
-      },
-      set: function set(nv) {
-        vm[target][key] = nv;
-      }
-    });
-  }
-
-  function initData(vm) {
-    var data = vm.$options.data;
-    data = typeof data === "function" ? data.call(vm, vm) : data;
-    vm._data = data;
-    observe(data);
-
-    for (var key in data) {
-      proxy(vm, "_data", key);
-    }
-  }
-
   var attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/;
   var ncname = "[a-zA-Z_][\\-\\.0-9_a-zA-Z]*";
   var qnameCapture = "((?:".concat(ncname, "\\:)?").concat(ncname, ")");
@@ -531,6 +357,51 @@
     return render;
   }
 
+  var id$1 = 0; // 属性的dep要收集watcher
+
+  var Dep = /*#__PURE__*/function () {
+    function Dep() {
+      _classCallCheck(this, Dep);
+
+      this.id = id$1++;
+      this.subs = []; // 这里存放对应属性得watcher有哪些
+    }
+
+    _createClass(Dep, [{
+      key: "addSub",
+      value: function addSub(watcher) {
+        this.subs.push(watcher);
+      }
+    }, {
+      key: "depend",
+      value: function depend() {
+        // 这里不希望放置重复得watcher
+        // this.subs.push(Dep.target);
+        Dep.target.addDep(this);
+      }
+    }, {
+      key: "notify",
+      value: function notify() {
+        this.subs.forEach(function (watcher) {
+          return watcher.update();
+        });
+      }
+    }]);
+
+    return Dep;
+  }();
+
+  Dep.target = null;
+  var stack = [];
+  function pushTarget(watcher) {
+    stack.push(watcher);
+    Dep.target = watcher;
+  }
+  function popTarget(watcher) {
+    stack.pop();
+    Dep.target = stack[stack.length - 1];
+  }
+
   var id = 0; // 每个属性有一个dep（属性就是被观察者），watcher就是观察者（属性变化了会通知观察者来更新）
 
   var Watcher = /*#__PURE__*/function () {
@@ -564,9 +435,9 @@
     }, {
       key: "get",
       value: function get() {
-        Dep.target = this;
+        pushTarget(this);
         this.getter();
-        Dep.target = null;
+        popTarget();
       }
     }, {
       key: "update",
@@ -787,11 +658,174 @@
     }
   }
 
+  // 重写数组中的部分方法
+  var oldArrayProto = Array.prototype;
+  var newArrayProto = Object.create(oldArrayProto);
+  var methods = ["push", "pop", "shift", "unshift", "reverse", "sort", "splice"];
+  methods.forEach(function (method) {
+    newArrayProto[method] = function () {
+      var _oldArrayProto$method;
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      // 这个this是调用方法的那个数组
+      var result = (_oldArrayProto$method = oldArrayProto[method]).call.apply(_oldArrayProto$method, [this].concat(args));
+
+      var inserted;
+      var ob = this.__ob__;
+
+      switch (method) {
+        case "push":
+        case "unshift":
+          inserted = args;
+          break;
+
+        case "splice":
+          inserted = args.slice(2);
+      }
+
+      if (inserted) {
+        ob.observeArray(inserted);
+      }
+
+      return result;
+    };
+  });
+
+  var Observer = /*#__PURE__*/function () {
+    function Observer(data) {
+      _classCallCheck(this, Observer);
+
+      // data.__ob__ = this;
+      Object.defineProperty(data, "__ob__", {
+        value: this,
+        enumerable: false
+      });
+
+      if (Array.isArray(data)) {
+        // 重写数组的方法，7个变异方法，这些方法可以修改数组本身
+        // 除了数组，数组内的引用类型也要劫持
+        data.__proto__ = newArrayProto; // 需要保留数组原有的特性，并且可以重写部分方法
+
+        this.observeArray(data);
+      } else {
+        this.walk(data);
+      }
+    }
+
+    _createClass(Observer, [{
+      key: "walk",
+      value: function walk(data) {
+        Object.keys(data).forEach(function (key) {
+          return defineReactive(data, key, data[key]);
+        });
+      }
+    }, {
+      key: "observeArray",
+      value: function observeArray(data) {
+        data.forEach(function (item) {
+          return observe(item);
+        });
+      }
+    }]);
+
+    return Observer;
+  }();
+
+  function defineReactive(target, key, value) {
+    observe(value);
+    var dep = new Dep();
+    Object.defineProperty(target, key, {
+      get: function get() {
+        if (Dep.target) {
+          dep.depend(); // 让这个属性得收集器记住这个watcher
+        }
+
+        return value;
+      },
+      set: function set(nv) {
+        if (nv === value) {
+          return;
+        }
+
+        observe(nv);
+        value = nv;
+        dep.notify();
+      }
+    });
+  }
+  function observe(data) {
+    if (_typeof(data) !== "object" || data === null) {
+      return;
+    }
+
+    if (data.__ob__ instanceof Observer) {
+      return data.__ob__;
+    }
+
+    return new Observer(data);
+  }
+
+  function initState(vm) {
+    var opts = vm.$options;
+
+    if (opts.data) {
+      initData(vm);
+    }
+
+    if (opts.computed) {
+      initComputed(vm);
+    }
+  }
+
+  function proxy(vm, target, key) {
+    Object.defineProperty(vm, key, {
+      get: function get() {
+        return vm[target][key];
+      },
+      set: function set(nv) {
+        vm[target][key] = nv;
+      }
+    });
+  }
+
+  function initData(vm) {
+    var data = vm.$options.data;
+    data = typeof data === "function" ? data.call(vm, vm) : data;
+    vm._data = data;
+    observe(data);
+
+    for (var key in data) {
+      proxy(vm, "_data", key);
+    }
+  }
+
+  function initComputed(vm) {
+    var computed = vm.$options.computed;
+
+    for (var key in computed) {
+      var userDef = computed[key];
+      defineComputed(vm, key, userDef);
+    }
+  }
+
+  function defineComputed(target, key, userDef) {
+    var getter = typeof userDef === "function" ? userDef : userDef.get;
+
+    var setter = userDef.set || function () {};
+
+    Object.defineProperty(target, key, {
+      get: getter,
+      set: setter
+    });
+  }
+
   function initMixin(Vue) {
     Vue.prototype._init = function (options) {
       var vm = this;
       vm.$options = mergeOptions(this.constructor.options, options);
-      console.log(vm.$options);
       callHook(vm, "beforeCreated");
       initState(vm);
       callHook(vm, "created");
