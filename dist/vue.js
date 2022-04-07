@@ -404,13 +404,19 @@
 
   var Watcher = /*#__PURE__*/function () {
     // 不同的组件有不同得watcher，目前只有一个，渲染跟实例
-    function Watcher(vm, fn, options) {
+    function Watcher(vm, exprOrFn, options, cb) {
       _classCallCheck(this, Watcher);
 
       this.id = id++;
       this.renderWatcher = options; // 标识是一个渲染watcher
 
-      this.getter = fn; // 意味着调用这个函数可以发生取值操作
+      if (typeof exprOrFn === "string") {
+        this.getter = function () {
+          return vm[exprOrFn];
+        };
+      } else {
+        this.getter = exprOrFn; // 意味着调用这个函数可以发生取值操作
+      }
 
       this.deps = []; // 后续实现计算属性和清理工作需要用到
 
@@ -418,7 +424,9 @@
       this.lazy = options.lazy;
       this.dirty = this.lazy;
       this.vm = vm;
-      this.lazy ? undefined : this.get();
+      this.user = options.user;
+      this.cb = cb;
+      this.value = this.lazy ? undefined : this.get();
     } // 一个视图对应多个属性，重复得属性也不用记录
 
 
@@ -469,6 +477,13 @@
     }, {
       key: "run",
       value: function run() {
+        var ov = this.value;
+        var nv = this.get();
+
+        if (this.user) {
+          this.cb.call(this.vm, nv, ov);
+        }
+
         this.get();
       }
     }]);
@@ -800,6 +815,35 @@
     if (opts.computed) {
       initComputed(vm);
     }
+
+    if (opts.watch) {
+      initWatch(vm);
+    }
+  }
+
+  function initWatch(vm) {
+    var watch = vm.$options.watch;
+    console.log(watch);
+
+    for (var key in watch) {
+      var handler = watch[key];
+
+      if (Array.isArray(handler)) {
+        for (var i = 0; i < handler.length; i++) {
+          createWatcher(vm, key, handler[i]);
+        }
+      } else {
+        createWatcher(vm, key, handler);
+      }
+    }
+  }
+
+  function createWatcher(vm, key, handler) {
+    if (typeof handler === "string") {
+      handler = vm[handler];
+    }
+
+    return vm.$watch(key, handler);
   }
 
   function proxy(vm, target, key) {
@@ -912,6 +956,14 @@
   initMixin(Vue);
   initLifeCycle(Vue);
   initGlobalAPI(Vue);
+
+  Vue.prototype.$watch = function (exprOrFn, cb) {
+    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+    console.log(exprOrFn, cb, options);
+    new Watcher(this, exprOrFn, {
+      user: true
+    }, cb);
+  };
 
   return Vue;
 

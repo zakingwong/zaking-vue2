@@ -26,23 +26,47 @@
         created() {
           console.log("created");
         },
-        computed: {
-          full() {
-            console.log("run");
-            return this.name + this.age;
+        methods: {
+          fn(nv, ov) {
+            console.log(nv, ov, "methods");
           },
-          // full: {
-          //   get() {
-          //     console.log("run");
-          //     return this.name + this.age;
+        },
+        watch: {
+          name(nv, ov) {
+            console.log(nv, ov, "fn");
+          },
+          // name: "fn",
+          // name: [
+          //   (nv, ov) => {
+          //     console.log(nv, ov, "arr1");
           //   },
-          //   set(nv) {
-          //     console.log(nv);
+          //   (nv, ov) => {
+          //     console.log(nv, ov, "arr2");
           //   },
+          // ],
+        },
+        computed: {
+          // full() {
+          //   console.log("run");
+          //   return this.name + this.age;
           // },
+          full: {
+            get() {
+              console.log("run");
+              return this.name + this.age;
+            },
+            set(nv) {
+              console.log(nv);
+            },
+          },
         },
       });
-
+      vm.$watch(
+        () => vm.name,
+        (nv, ov) => {
+          console.log(nv, ov, "$watch");
+        }
+      );
       setTimeout(() => {
         // vm.full = "zakingwong2000";
         vm.name = "xxx";

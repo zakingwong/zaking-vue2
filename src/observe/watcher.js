@@ -6,16 +6,24 @@ let id = 0;
 
 class Watcher {
   // 不同的组件有不同得watcher，目前只有一个，渲染跟实例
-  constructor(vm, fn, options) {
+  constructor(vm, exprOrFn, options, cb) {
     this.id = id++;
     this.renderWatcher = options; // 标识是一个渲染watcher
-    this.getter = fn; // 意味着调用这个函数可以发生取值操作
+    if (typeof exprOrFn === "string") {
+      this.getter = function () {
+        return vm[exprOrFn];
+      };
+    } else {
+      this.getter = exprOrFn; // 意味着调用这个函数可以发生取值操作
+    }
     this.deps = []; // 后续实现计算属性和清理工作需要用到
     this.depsId = new Set();
     this.lazy = options.lazy;
     this.dirty = this.lazy;
     this.vm = vm;
-    this.lazy ? undefined : this.get();
+    this.user = options.user;
+    this.cb = cb;
+    this.value = this.lazy ? undefined : this.get();
   }
   // 一个视图对应多个属性，重复得属性也不用记录
   addDep(dep) {
@@ -51,6 +59,11 @@ class Watcher {
     // this.get(); // 重新渲染
   }
   run() {
+    let ov = this.value;
+    let nv = this.get();
+    if (this.user) {
+      this.cb.call(this.vm, nv, ov);
+    }
     this.get();
   }
 }
