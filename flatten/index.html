@@ -10,18 +10,28 @@
     <script src="vue.js"></script>
     <script>
       const vm = new Vue({
-        data(vm) {
-          console.log(vm);
+        data() {
           return {
             name: "zf",
             age: 20,
-            a: function () {
-              return this.age;
+            address: {
+              a: 1,
+              b: 2,
             },
-            mm: [1, 2, 3, { a: 1, b: 2 }],
+            // 每一个数组都代理，那就会产生性能问题
+            hobby: ["eat", "drink", { a: 3 }],
           };
         },
       });
+      console.log(vm);
+      console.log(vm.address);
+      vm.address = {
+        x: 1,
+      };
+      console.log(vm);
+      vm.hobby[2].a;
+      vm.hobby.push("1");
+      vm.hobby[2].a = 100;
     </script>
   </body>
 </html>

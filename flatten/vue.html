@@ -11,20 +11,31 @@
   <script>
     const vm = new Vue({
       data(vm) {
-        console.log(vm);
+        console.log(vm, "data-vm");
+        console.log(vm.name, "data-vm-name");
         setTimeout(() => {
-          console.log(vm.a());
+          console.log(vm.name, "data-vm-name-setTimeout");
         }, 0);
         return {
           name: "zf",
           age: 20,
-          a: function () {
-            return this.age;
+          address: {
+            a: 1,
+            b: 2,
           },
-          mm: ["12", 12, { mx: 1 }],
+          // 每一个数组都代理，那就会产生性能问题
+          hobby: ["eat", "drink", { a: 3 }],
         };
       },
     });
     console.log(vm);
+    console.log(vm.address);
+    vm.address = {
+      x: 1,
+    };
+    console.log(vm);
+    vm.hobby[2].a;
+    vm.hobby.push("1");
+    vm.hobby[2].a = 100;
   </script>
 </html>

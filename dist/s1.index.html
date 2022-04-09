@@ -9,8 +9,20 @@
   <body>
     <script src="vue.js"></script>
     <script>
+      // 1、我们要做的第一件事，就是初始化Data。
+      // 2、然后，我们来给data中的数据绑定DefineProperty，使其可以观测到变化。
+      // 3、最后，我们还要给数组写额外的处理，使得我们只观测数组对象的变化，而不是内部每个数组元素都绑定上。
+      // eg：我额外要强调的是，代码的执行顺序和时机。
       const vm = new Vue({
-        data() {
+        data(vm) {
+          // 这是为啥呢？
+          // 那是因为在同步执行的时候，此次tick中，执行console的时候，data中的数据还没执行到代理的部分。
+          console.log(vm, "data-vm");
+          console.log(vm.name, "data-vm-name");
+          // 所以，在现在的阶段，我们用settimeout试试
+          setTimeout(() => {
+            console.log(vm.name, "data-vm-name-setTimeout");
+          }, 0);
           return {
             name: "zf",
             age: 20,
@@ -23,6 +35,7 @@
           };
         },
       });
+
       console.log(vm);
       console.log(vm.address);
       vm.address = {

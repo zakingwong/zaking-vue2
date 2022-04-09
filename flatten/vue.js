@@ -99,6 +99,11 @@ function proxy(vm, target, key) {
     },
   });
 }
+// 要注意的是，在现在的阶段，我们是可以这样写，因为不涉及后续更多的逻辑
+// 但是，随着后续的逻辑增加，这样写就会导致耦合和不可阅读性。
+// 这也是为什么在src的源码中要把它分割开的原因，
+// 随着代码的深入，也就不会再有flatten这个文件夹了
+
 function Vue(options) {
   const vm = this;
   vm.$options = options;
