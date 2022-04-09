@@ -115,10 +115,7 @@
       }
 
       // 这个this是调用方法的那个数组
-<<<<<<< HEAD
-=======
       // 执行我们自己的逻辑，并返回真正的方法调用的结果
->>>>>>> s1
       var result = (_oldArrayProto$method = oldArrayProto[method]).call.apply(_oldArrayProto$method, [this].concat(args));
 
       var inserted; // 这个就是__ob__的作用了。可以在想要的，可以获取到实例的地方，调用observe
@@ -180,7 +177,6 @@
       key: "observeArray",
       value: function observeArray(data) {
         data.forEach(function (item) {
-          console.log(item, "array-item");
           observe(item);
         });
       }
@@ -190,8 +186,7 @@
   }();
 
   function defineReactive(target, key, value) {
-    console.log(key, "key"); // 这里递归一下，如果value还是对象的话，oberve里面做了判断
-
+    // 这里递归一下，如果value还是对象的话，oberve里面做了判断
     observe(value); // 这就好理解了，target就是data，
     // 我们给data上的属性做了defineProperty的绑定。
 
@@ -391,7 +386,6 @@
       }
     }
 
-    console.log(root, "root");
     return root;
   }
 

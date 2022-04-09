@@ -26,14 +26,12 @@ class Observer {
   }
   observeArray(data) {
     data.forEach((item) => {
-      console.log(item, "array-item");
       observe(item);
     });
   }
 }
 
 export function defineReactive(target, key, value) {
-  console.log(key, "key");
   // 这里递归一下，如果value还是对象的话，oberve里面做了判断
   observe(value);
   // 这就好理解了，target就是data，
