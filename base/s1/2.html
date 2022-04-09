@@ -55,6 +55,9 @@
 
       // 看到了没，其实就是这么简单，通过defineProperty就能触发对象属性的监听，
       // 监听到了，那我们自然就可以根据变化去做我们自己想做的事了
+
+      // 在这里，大家发现一个问题没有？就是vue中还做了一个代理，把_data上的属性，代理到了vm上，所以，vm.xx的变化，就会同步更新vm._data.xxx的变化。
+      // 又由于vm._data = data;是引用关系，所以vm._data.xxx 的变化，也引起了data.xxx的变化，于是就触发了我们观测data时defineProperty
     </script>
   </body>
 </html>

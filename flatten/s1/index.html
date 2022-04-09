@@ -10,16 +10,10 @@
     <script src="vue.js"></script>
     <script>
       const vm = new Vue({
-        data(vm) {
-          setTimeout(() => {
-            console.log(vm.a());
-          }, 0);
+        data() {
           return {
             name: "zaking",
             age: 20,
-            a: function () {
-              return this.age;
-            },
             address: {
               a: 1,
               b: 2,

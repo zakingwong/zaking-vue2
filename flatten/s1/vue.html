@@ -11,15 +11,14 @@
   <script>
     const vm = new Vue({
       data(vm) {
+        console.log(vm, "data-vm");
+        console.log(vm.name, "data-vm-name");
         setTimeout(() => {
-          console.log(vm.a());
+          console.log(vm.name, "data-vm-name-setTimeout");
         }, 0);
         return {
           name: "zaking",
           age: 20,
-          a: function () {
-            return this.age;
-          },
           address: {
             a: 1,
             b: 2,
