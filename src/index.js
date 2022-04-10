@@ -8,5 +8,6 @@ function Vue(options) {
 }
 // 所以，在这里，我们引入了initMixin，并且执行了initMixin。那么我们去initMixin中看下它干了啥
 initMixin(Vue);
+// 首先啊，我们通过initLifeCycle给Vue类上绑定一些方法
 initLifeCycle(Vue);
 export default Vue;

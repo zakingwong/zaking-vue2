@@ -291,6 +291,7 @@
     }
 
     function start(tag, attrs) {
+      // 开始要创建一个AST对象
       var node = createASTElement(tag, attrs);
 
       if (!root) {
@@ -314,7 +315,8 @@
         text: text,
         parent: currentParent
       });
-    }
+    } // 如果匹配到尾标签了，说明需要清楚栈中存储的对象，这样我们就完成了一个标签的匹配
+
 
     function end() {
       stack.pop();
@@ -326,22 +328,30 @@
     }
 
     function parseStartTag() {
-      var start = html.match(startTagOpen);
+      // 匹配标签的开始
+      var start = html.match(startTagOpen); // 如果存在的话，就放到这样的一个对象里
 
       if (start) {
         var match = {
           tagName: start[1],
           attrs: []
-        };
+        }; // 需要删除掉匹配到的部分，匹配一部分就删除一部分
+
         advance(start[0].length); // 如果不是开始标签的结束，就一直匹配下去
 
-        var attr, _end;
+        var attr, _end; // 匹配属性
+
 
         while (!(_end = html.match(startTagClose)) && (attr = html.match(attribute))) {
           advance(attr[0].length);
           match.attrs.push({
             name: attr[1],
             value: attr[3] || attr[4] || attr[5] || true
+          }); // 去下空格，感觉这样不太好，但是功能达到了，嘻嘻
+
+          match.attrs.forEach(function (item) {
+            item.name = item.name.replace(/\s+/g, "");
+            item.value = item.value.replace(/\s+/g, "");
           });
         }
 
@@ -357,24 +367,27 @@
 
     while (html) {
       var textEnd = html.indexOf("<"); // 如果textEnd是0，说明是一个开始标签或是一个结束标签
-      // 如果textEnd大于0，说明就是文本的结束位置
 
       if (textEnd === 0) {
-        var startTagMatch = parseStartTag();
+        // 这个就是通过正则，来匹配目标字符串了
+        var startTagMatch = parseStartTag(); // 如果存在的话，那么跳过此次循环，获取到对应的标签名和属性
 
         if (startTagMatch) {
           start(startTagMatch.tagName, startTagMatch.attrs);
           continue;
-        }
+        } // 匹配尾部标签
 
-        var endTagMatch = html.match(endTag);
+
+        var endTagMatch = html.match(endTag); // 同样的
 
         if (endTagMatch) {
           advance(endTagMatch[0].length);
           end(endTagMatch[1]);
           continue;
         }
-      }
+      } // 如果textEnd大于0，说明就是文本的结束位置
+      // 匹配文本
+
 
       if (textEnd > 0) {
         var text = html.substring(0, textEnd);
@@ -386,6 +399,7 @@
       }
     }
 
+    console.log(root, "root");
     return root;
   }
 
@@ -470,8 +484,10 @@
     // 将template转换成ast
     var ast = parseHTML(template); //生成render方法，返回虚拟DOM
 
-    var code = codegen(ast);
-    code = "with(this){return ".concat(code, "}");
+    var code = codegen(ast); // 这里，通过with，让其内部的字符串适用this
+
+    code = "with(this){return ".concat(code, "}"); // 生成真正的函数
+
     var render = new Function(code);
     return render;
   }
@@ -514,15 +530,20 @@
     var tag = vnode.tag,
         data = vnode.data,
         children = vnode.children,
-        text = vnode.text;
+        text = vnode.text; // 判断tag是不是字符串，因为如果是文本的话，是没有tag属性的
 
     if (typeof tag === "string") {
-      vnode.el = document.createElement(tag);
-      patchProps(vnode.el, data);
+      // 创建DOM
+      vnode.el = document.createElement(tag); // 挂载DOM上的属性
+
+      patchProps(vnode.el, data); // 循环子节点
+
       children.forEach(function (child) {
+        // 插入递归生成的子节点
         vnode.el.appendChild(createElm(child));
       });
     } else {
+      // 如果是文本节点，直接创建赋值就好了
       vnode.el = document.createTextNode(text);
     }
 
@@ -530,9 +551,13 @@
   }
 
   function patchProps(el, props) {
+    // 就是循环属性绑定就好了，都是原生的方法
     for (var key in props) {
+      // 特殊处理下style
       if (key === "style") {
         for (var styleName in props[key]) {
+          console.log(props.style[styleName], "props.style[styleName]");
+          console.log(styleName, "styleName");
           el.style[styleName] = props.style[styleName];
         }
       } else {
@@ -542,44 +567,61 @@
   }
 
   function patch(oldVNode, vnode) {
+    // 第一次渲染的时候，oldVNode是真实的DOM元素，也就是我们传入的el。
+    // 真实的DOM元素会有nodeType属性，而我们自己定义的VNode对象是没有的
+    // 所以我们可以据此判断是否是首次挂载
     var isRealElement = oldVNode.nodeType;
+    console.log(isRealElement, "isReal");
 
     if (isRealElement) {
-      var elm = oldVNode;
-      var parentElm = elm.parentNode;
-      var newElm = createElm(vnode);
-      parentElm.insertBefore(newElm, elm.nextSibling);
+      // 这个就是我们的div#app
+      var elm = oldVNode; // 这个就是body了
+
+      var parentElm = elm.parentNode; // 我们使用createElm方法，把我们已经构建好的vnode对象，生成真正的DOM，
+
+      var newElm = createElm(vnode); // 并且把它插入到跟div#app同级，其实就是body里拉
+
+      parentElm.insertBefore(newElm, elm.nextSibling); // 然后移除那个div#app就好了
+
       parentElm.removeChild(elm);
       return newElm;
     }
   }
 
   function initLifeCycle(Vue) {
+    // 这个方法用来创建真正的DOM
     Vue.prototype._update = function (vnode) {
-      console.log(vnode);
       var vm = this;
-      var el = vm.$el;
+      var el = vm.$el; // patch才是真正执行渲染挂载DOM的地方
+
+      console.log(vnode, "vnode");
       vm.$el = patch(el, vnode);
-    };
+    }; // 创建标签节点VNode
+
 
     Vue.prototype._c = function () {
       return createElementVNode.apply(void 0, [this].concat(Array.prototype.slice.call(arguments)));
-    };
+    }; // 创建文本节点VNode
+
 
     Vue.prototype._v = function () {
       return createTextVNode.apply(void 0, [this].concat(Array.prototype.slice.call(arguments)));
-    };
+    }; // 创建纯内容
+
 
     Vue.prototype._s = function (value) {
       if (_typeof(value) !== "object") return value;
       return JSON.stringify(value);
-    };
+    }; // 执行render函数，并把render里的this通过call方法指向vm
+    // 这样，我们生成的render函数内部就可以使用vm上的_c,_v,_s方法啥的了
+
 
     Vue.prototype._render = function () {
       var vm = this;
       return vm.$options.render.call(vm);
     };
-  }
+  } // 触发mount的外围方法
+
   function mountComponent(vm, el) {
     // 调用render方法，产生虚拟节点
     // 根据虚拟DOM生成真实DOM
@@ -597,16 +639,24 @@
 
       vm.$options = options; // 然后再去初始化状态
 
-      initState(vm);
+      initState(vm); // 真正的挂载调用是$mount,记不记得我们使用Vue开发项目的时候，通常都会手动调用一下$mount?
+      // 其实你不手动调用，传个el也行的。
 
       if (options.el) {
         vm.$mount(options.el);
       }
-    };
+    }; // 真正的挂载调用时机
+    // 还是强调一下，你只有new Vue的时候，这个才会执行，不然只是实例上的一个方法罢了。
+
 
     Vue.prototype.$mount = function (el) {
-      var vm = this;
-      el = document.querySelector(el);
+      var vm = this; // 找el节点，也就是我们需要挂载的根节点
+
+      el = document.querySelector(el); // 判断没有render函数的话，有的话这里没写，嘻嘻
+      // 没有的话
+      // 这就是各种判断，有没有传template参数，传了的话就优先使用template
+      // 没传就使用传入的挂载的根节点的内容作为template
+
       var ops = vm.$options;
 
       if (!ops.render) {
@@ -621,10 +671,13 @@
         }
 
         if (template && el) {
-          var render = complierToFcuntion(template);
+          // 然后传入template，通过complierToFcuntion方法，拿到render函数，注意这里的render是个真正的方法了
+          var render = complierToFcuntion(template); // 放到vm.$options上
+
           ops.render = render;
         }
-      }
+      } // 然后，开始挂载
+
 
       mountComponent(vm, el);
     };
@@ -638,7 +691,8 @@
   } // 所以，在这里，我们引入了initMixin，并且执行了initMixin。那么我们去initMixin中看下它干了啥
 
 
-  initMixin(Vue);
+  initMixin(Vue); // 首先啊，我们通过initLifeCycle给Vue类上绑定一些方法
+
   initLifeCycle(Vue);
 
   return Vue;
