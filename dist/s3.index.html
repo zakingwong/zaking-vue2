@@ -15,26 +15,25 @@
       const vm = new Vue({
         data() {
           return {
-            name: "zaking",
-            age: 20,
+            name: "wong-",
+            age: 99,
           };
         },
-        // el: "#app",
       });
-      // vm.name = "zakingwong";
-      // vm.age = 30;
       vm.$mount("#app");
-      // setTimeout(() => {
-      //   vm.name = "zakingwong";
-      //   vm.age = 30;
-      //   vm.name = "zakingwong1";
-      //   vm.age = 301;
-      //   vm.name = "zakingwong2";
-      //   vm.age = 302;
-      //   console.log("settimeout");
-      //   // vm._update(vm._render());
-      // }, 2000);
-      vm.name = "zk";
+
+      vm.name = "zakingwong1-";
+      vm.name = "zakingwong2-";
+      vm.name = "zakingwong3-";
+      vm.name = "zakingwong4-";
+      vm.name = "zakingwong5-";
+
+      vm.age = 1;
+      vm.age = 2;
+      vm.age = 3;
+      vm.age = 4;
+      vm.age = 5;
+
       vm.$nextTick(() => {
         console.log(document.querySelector("#app").innerHTML);
       });
