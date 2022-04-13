@@ -46,9 +46,11 @@
   }
 
   function initGlobalAPI(Vue) {
+    // 这里，挂载到Vue类上的options实际上，全都是通过调用Vue.mixin方法的options
     Vue.options = {};
 
     Vue.mixin = function (mixin) {
+      // 这里的this，当然就是指Vue实例
       this.options = mergeOptions(this.options, mixin);
       return this;
     };
@@ -872,6 +874,8 @@
     // 这里还要注意，整个Vue都是通过在类的实例上绑定方法来通信的，然后才可以在Vue的各个地方调用
     Vue.prototype._init = function (options) {
       var vm = this; // 在vm上绑定传入的options。
+      // 这里的this.constructor.options，就是通过mixin方法，传入的options
+      // options，就是new Vue时传入的那个
 
       vm.$options = mergeOptions(this.constructor.options, options);
       callHook(vm, "beforeCreated"); // 然后再去初始化状态

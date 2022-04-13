@@ -8,6 +8,8 @@ export function initMixin(Vue) {
   Vue.prototype._init = function (options) {
     const vm = this;
     // 在vm上绑定传入的options。
+    // 这里的this.constructor.options，就是通过mixin方法，传入的options
+    // options，就是new Vue时传入的那个
     vm.$options = mergeOptions(this.constructor.options, options);
     callHook(vm, "beforeCreated");
     // 然后再去初始化状态
