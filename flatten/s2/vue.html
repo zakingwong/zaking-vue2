@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <title>Document</title>
   </head>
   <body>
@@ -14,26 +13,27 @@
       <br />
       <span>{{age}}</span>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script>
+      const vm = new Vue({
+        data() {
+          return {
+            name: "zaking",
+            age: 20,
+            address: {
+              a: 1,
+              b: 2,
+            },
+            hobby: ["eat", "drink", { a: 3 }],
+          };
+        },
+        el: "#app",
+      });
+      setTimeout(() => {
+        vm.name = "zakingwong";
+        vm.age = 30;
+        vm._update(vm._render());
+      }, 2000);
+    </script>
   </body>
-  <script>
-    const vm = new Vue({
-      data() {
-        return {
-          name: "zaking",
-          age: 20,
-          address: {
-            a: 1,
-            b: 2,
-          },
-          hobby: ["eat", "drink", { a: 3 }],
-        };
-      },
-      el: "#app",
-    });
-    setTimeout(() => {
-      vm.name = "zakingwong";
-      vm.age = 30;
-      vm._update(vm._render());
-    }, 2000);
-  </script>
 </html>

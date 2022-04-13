@@ -48,11 +48,12 @@
           this.get();
         }
       }
-
       function defineReactive(target, key, value) {
         let dep = new Dep();
         Object.defineProperty(target, key, {
           get() {
+            console.log(Dep.target);
+            console.log(dep);
             if (Dep.target) {
               dep.depend();
             }

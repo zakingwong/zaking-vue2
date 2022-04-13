@@ -73,6 +73,7 @@ function defineReactive(target, key, value) {
       if (nv === value) {
         return;
       }
+      observe(nv);
       value = nv;
     },
   });

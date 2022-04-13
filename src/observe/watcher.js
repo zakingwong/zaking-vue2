@@ -3,7 +3,7 @@ import { popTarget, pushTarget } from "./dep";
 let id = 0;
 
 // 每个属性有一个dep（属性就是被观察者），watcher就是观察者（属性变化了会通知观察者来更新）
-
+// 这个Watcher，在目前的阶段，本质上来说，就是触发回调，当然，这个回调可能是渲染，可能是其他什么事，反正核心就是触发回调
 class Watcher {
   // 不同的组件有不同得watcher，目前只有一个，渲染跟实例
   constructor(vm, exprOrFn, options, cb) {
@@ -17,7 +17,7 @@ class Watcher {
       this.getter = exprOrFn; // 意味着调用这个函数可以发生取值操作
     }
     this.deps = []; // 后续实现计算属性和清理工作需要用到
-    this.depsId = new Set();
+    this.depsId = new Set(); // 用来确定是否重复存储了dep
     this.lazy = options.lazy;
     this.dirty = this.lazy;
     this.vm = vm;
@@ -73,6 +73,7 @@ let has = {};
 let pending = false;
 
 function flushSchedulerQueue() {
+  console.log("notify");
   let flushQueue = queue.slice(0);
   queue = [];
   has = {};

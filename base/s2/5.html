@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // 5、 扩展运算符与rest参数
+      // 1.rest参数
+      // https://es6.ruanyifeng.com/#docs/function#rest-%E5%8F%82%E6%95%B0
+      // 简单来说rest参数就是可以这样
+      function add(...values) {
+        let sum = 0;
+
+        for (var val of values) {
+          sum += val;
+        }
+
+        return sum;
+      }
+
+      add(2, 5, 3); // 10
+      // 我们可以把values，也就是rest参数，当作真正的数组，而不是像arguments这样的类数组对象。
+      // 要比arguments更简洁，好用。
+      // 2.扩展运算符
+      // https://es6.ruanyifeng.com/#docs/array#%E6%89%A9%E5%B1%95%E8%BF%90%E7%AE%97%E7%AC%A6
+      // 好比rest参数的逆运算，它可以将一个数组转为用逗号分隔的参数序列。
+      function push(array, ...items) {
+        console.log(items, "items");
+        array.push(...items);
+      }
+
+      function add(x, y) {
+        return x + y;
+      }
+
+      const numbers = [4, 38];
+      console.log(add(...numbers)); // 42
+      push(numbers, ...[1, 2, 3]);
+      console.log(numbers, "numbers");
+
+      // 所以，我觉得可以这么理解，其实rest参数，
+      // 就是放在函数参数位置的扩展运算符，可以在函数内部，直接拿到rest数组。
+    </script>
+  </body>
+</html>
