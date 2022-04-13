@@ -9,7 +9,6 @@
   <body>
     <script>
       // 1、我们来实现一个最小化的watcher和dep
-
       class Watcher {
         constructor(fn) {
           this.getter = fn;
@@ -23,7 +22,7 @@
         get() {
           Dep.target = this;
           this.getter();
-          Dep.target = null;
+          // Dep.target = null;
         }
         update() {
           this.get();
@@ -43,16 +42,13 @@
           this.subs.forEach((watcher) => watcher.update());
         }
       }
-      var obj = {
-        a: 1,
-        b: 2,
-      };
-
       function defineReactive(target, key, value) {
         let dep = new Dep();
 
         Object.defineProperty(target, key, {
           get() {
+            console.log(Dep.target);
+            console.log(dep);
             if (Dep.target) {
               dep.depend();
             }
@@ -69,15 +65,17 @@
           },
         });
       }
+      var obj = {
+        a: 1,
+      };
+      // 模拟Observer
       Object.keys(obj).forEach((key) => defineReactive(obj, key, obj[key]));
+      // 模拟$mount
       new Watcher(() => {
         console.log("reRender");
       });
-
-      setTimeout(() => {
-        console.log("---setTimeout---");
-        obj.a = 2;
-      }, 2000);
+      obj.a; //模拟render函数读取数据
+      obj.a = 2; // 模拟修改数据
     </script>
   </body>
 </html>

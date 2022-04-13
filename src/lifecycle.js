@@ -27,8 +27,6 @@ function patchProps(el, props) {
     // 特殊处理下style
     if (key === "style") {
       for (let styleName in props[key]) {
-        console.log(props.style[styleName], "props.style[styleName]");
-        console.log(styleName, "styleName");
         el.style[styleName] = props.style[styleName];
       }
     } else {
@@ -42,7 +40,6 @@ function patch(oldVNode, vnode) {
   // 真实的DOM元素会有nodeType属性，而我们自己定义的VNode对象是没有的
   // 所以我们可以据此判断是否是首次挂载
   const isRealElement = oldVNode.nodeType;
-  console.log(isRealElement, "isReal");
   if (isRealElement) {
     // 这个就是我们的div#app
     const elm = oldVNode;
@@ -67,7 +64,6 @@ export function initLifeCycle(Vue) {
     const vm = this;
     const el = vm.$el;
     // patch才是真正执行渲染挂载DOM的地方
-    console.log(vnode, "vnode");
     vm.$el = patch(el, vnode);
   };
   // 创建标签节点VNode
@@ -97,8 +93,8 @@ export function mountComponent(vm, el) {
   // 插入到el中
   vm.$el = el;
   const updateComponent = () => {
-    console.log("---");
     vm._update(vm._render());
   };
+  // 在这里，我们通过new Watcher的方式，生成一个Watcher实例
   new Watcher(vm, updateComponent, true); // 用true标识是渲染watcher
 }

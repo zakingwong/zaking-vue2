@@ -149,7 +149,8 @@
 
       this.id = id$1++;
       this.subs = []; // 这里存放对应属性得watcher有哪些
-    }
+    } // 用来记录watcher的方法
+
 
     _createClass(Dep, [{
       key: "addSub",
@@ -161,8 +162,10 @@
       value: function depend() {
         // 这里不希望放置重复得watcher
         // this.subs.push(Dep.target);
+        // Dep.target是Watcher，所以Dep.target调用的是watcher的方法
         Dep.target.addDep(this);
-      }
+      } // 触发watcher的更新
+
     }, {
       key: "notify",
       value: function notify() {
@@ -533,6 +536,7 @@
   }
 
   var id = 0; // 每个属性有一个dep（属性就是被观察者），watcher就是观察者（属性变化了会通知观察者来更新）
+  // 这个Watcher，在目前的阶段，本质上来说，就是触发回调，当然，这个回调可能是渲染，可能是其他什么事，反正核心就是触发回调
 
   var Watcher = /*#__PURE__*/function () {
     // 不同的组件有不同得watcher，目前只有一个，渲染跟实例
@@ -546,7 +550,8 @@
 
       this.deps = []; // 后续实现计算属性和清理工作需要用到
 
-      this.depsId = new Set();
+      this.depsId = new Set(); // 用来确定是否重复存储了dep
+
       this.get();
     } // 一个视图对应多个属性，重复得属性也不用记录
 
@@ -589,6 +594,7 @@
   var pending = false;
 
   function flushSchedulerQueue() {
+    console.log("notify");
     var flushQueue = queue.slice(0);
     queue = [];
     has = {};
@@ -727,8 +733,6 @@
       // 特殊处理下style
       if (key === "style") {
         for (var styleName in props[key]) {
-          console.log(props.style[styleName], "props.style[styleName]");
-          console.log(styleName, "styleName");
           el.style[styleName] = props.style[styleName];
         }
       } else {
@@ -742,7 +746,6 @@
     // 真实的DOM元素会有nodeType属性，而我们自己定义的VNode对象是没有的
     // 所以我们可以据此判断是否是首次挂载
     var isRealElement = oldVNode.nodeType;
-    console.log(isRealElement, "isReal");
 
     if (isRealElement) {
       // 这个就是我们的div#app
@@ -765,7 +768,6 @@
       var vm = this;
       var el = vm.$el; // patch才是真正执行渲染挂载DOM的地方
 
-      console.log(vnode, "vnode");
       vm.$el = patch(el, vnode);
     }; // 创建标签节点VNode
 
@@ -800,10 +802,9 @@
     vm.$el = el;
 
     var updateComponent = function updateComponent() {
-      console.log("---");
-
       vm._update(vm._render());
-    };
+    }; // 在这里，我们通过new Watcher的方式，生成一个Watcher实例
+
 
     new Watcher(vm, updateComponent, true); // 用true标识是渲染watcher
   }
