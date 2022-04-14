@@ -7,81 +7,79 @@
     <title>Document</title>
   </head>
   <body>
-    <!-- <div id="app">{{full}} {{full}} {{full}} {{full}}</div> -->
-    <div id="app">{{arr}} {{a}}</div>
+    <div id="app">{{full}} {{full}} {{full}} {{full}}</div>
+    <!-- <div id="app">{{arr}} {{a}}</div> -->
     <script src="vue.js"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script> -->
     <script>
-      const vm = new Vue({
-        el: "#app",
-        data() {
-          return {
-            arr: [1, 2, 3, { a: 1 }, ["a", "b"]],
-            a: { a: 1 },
-          };
-        },
-      });
-      // vm.arr[0] = 100;
-      // vm.arr.push(100);
-      setTimeout(() => {
-        // vm.arr.push(100);
-        // vm.a.b = 100;
-        // vm.a.__ob__.dep.notify();
-        vm.arr[4].push("c");
-      }, 2000);
       // const vm = new Vue({
+      //   el: "#app",
       //   data() {
       //     return {
-      //       name: "zaking",
-      //       age: 20,
-      //       address: {
-      //         a: 1,
-      //         b: 2,
-      //       },
-      //       hobby: ["eat", "drink", { a: 3 }],
+      //       arr: [1, 2, 3, { a: 1 }, ["a", "b"]],
+      //       a: { a: 1 },
       //     };
       //   },
-      //   el: "#app",
-      //   created() {
-      //     console.log("created");
-      //   },
-      //   methods: {
-      //     fn(nv, ov) {
-      //       console.log(nv, ov, "methods");
-      //     },
-      //   },
-      //   watch: {
-      //     name(nv, ov) {
-      //       console.log(nv, ov, "fn");
-      //     },
-      //     // name: "fn",
-      //     // name: [
-      //     //   (nv, ov) => {
-      //     //     console.log(nv, ov, "arr1");
-      //     //   },
-      //     //   (nv, ov) => {
-      //     //     console.log(nv, ov, "arr2");
-      //     //   },
-      //     // ],
-      //   },
-      //   // 1、computed
-      //   computed: {
-      //     // full() {
-      //     //   console.log("run");
-      //     //   return this.name + this.age;
-      //     // },
-      //     full: {
-      //       get() {
-      //         console.log("run");
-      //         return this.name + this.age;
-      //       },
-      //       set(nv) {
-      //         console.log(nv);
-      //       },
-      //     },
-      //   },
       // });
-      // // 2、watch
+      // vm.arr[0] = 100;
+      // vm.arr.push(100);
+      // setTimeout(() => {
+      //   // vm.arr.push(100);
+      //   // vm.a.b = 100;
+      //   // vm.a.__ob__.dep.notify();
+      //   vm.arr[4].push("c");
+      // }, 2000);
+      const vm = new Vue({
+        data() {
+          return {
+            name: "zaking",
+            age: 20,
+            address: {
+              a: 1,
+              b: 2,
+            },
+            hobby: ["eat", "drink", { a: 3 }],
+          };
+        },
+        el: "#app",
+        methods: {
+          fn(nv, ov) {
+            console.log(nv, ov, "methods");
+          },
+        },
+        watch: {
+          // name(nv, ov) {
+          //   console.log(nv, ov, "fn");
+          // },
+          // name: "fn",
+          // name: [
+          //   (nv, ov) => {
+          //     console.log(nv, ov, "arr1");
+          //   },
+          //   (nv, ov) => {
+          //     console.log(nv, ov, "arr2");
+          //   },
+          // ],
+        },
+        // 1、computed
+        computed: {
+          full() {
+            console.log("run");
+            return this.name + this.age;
+          },
+          // full: {
+          //   get() {
+          //     console.log("run");
+          //     return this.name + this.age;
+          //   },
+          //   set(nv) {
+          //     console.log(nv);
+          //   },
+          // },
+        },
+      });
+      vm.name = 1;
+      // 2、watch
       // vm.$watch(
       //   () => vm.name,
       //   (nv, ov) => {
@@ -93,7 +91,7 @@
       //   vm.name = "xxx";
       // }, 1000);
 
-      // // 3、数组的监控
+      // 3、数组的监控
       // vm.hobby[0] = "play";
     </script>
   </body>

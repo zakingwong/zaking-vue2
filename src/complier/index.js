@@ -61,13 +61,9 @@ function codegen(ast) {
 }
 
 export function complierToFcuntion(template) {
-  // 将template转换成ast
   let ast = parseHTML(template);
-  //生成render方法，返回虚拟DOM
   let code = codegen(ast);
-  // 这里，通过with，让其内部的字符串适用this
   code = `with(this){return ${code}}`;
-  // 生成真正的函数
   let render = new Function(code);
   return render;
 }

@@ -2,10 +2,7 @@ import { popTarget, pushTarget } from "./dep";
 
 let id = 0;
 
-// 每个属性有一个dep（属性就是被观察者），watcher就是观察者（属性变化了会通知观察者来更新）
-// 这个Watcher，在目前的阶段，本质上来说，就是触发回调，当然，这个回调可能是渲染，可能是其他什么事，反正核心就是触发回调
 class Watcher {
-  // 不同的组件有不同得watcher，目前只有一个，渲染跟实例
   constructor(vm, exprOrFn, options, cb) {
     this.id = id++;
     this.renderWatcher = options; // 标识是一个渲染watcher
@@ -25,7 +22,6 @@ class Watcher {
     this.cb = cb;
     this.value = this.lazy ? undefined : this.get();
   }
-  // 一个视图对应多个属性，重复得属性也不用记录
   addDep(dep) {
     let id = dep.id;
     if (!this.depsId.has(id)) {
@@ -56,7 +52,6 @@ class Watcher {
     } else {
       queueWatcher(this);
     }
-    // this.get(); // 重新渲染
   }
   run() {
     let ov = this.value;
@@ -136,11 +131,4 @@ export function nextTick(cb) {
     waiting = true;
   }
 }
-
-// 需要给每一个属性增加一个dep，目的就是收集watcher
-// 一个视图中，会有n个属性
-// n个dep对应一个watcher
-// 一个属性，对应多个视图，1个dep对应多个watcher
-// 视图和属性是多对多得关系
-
 export default Watcher;

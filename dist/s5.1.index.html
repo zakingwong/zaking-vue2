@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app">{{fullname}} {{fullname}} {{fullname}} {{fullname}}</div>
+    <script src="vue.js"></script>
+    <script>
+      const vm = new Vue({
+        el: "#app",
+        data() {
+          return {
+            name: "zaking",
+            age: 20,
+          };
+        },
+        computed: {
+          fullname() {
+            console.log("run");
+            return this.name + this.age;
+          },
+        },
+      });
+      // 5.1.1 computed
+      // 多次调用，只触发一次
+      setTimeout(() => {
+        vm.name = "wong";
+      }, 2000);
+    </script>
+  </body>
+</html>

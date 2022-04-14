@@ -1,5 +1,3 @@
 # zaking-vue2
-1.initData.png
 
->> https://www.processon.com/view/link/6251833263768946f278f0db
-密码:zaking
+>> flatten部分，到了s4就不再有，本身就是为了前期容易理解，到了后面，随着代码的增多是一定要拆分的，不然很多逻辑和条理都说不清楚。所以，过了s4，就不再把这些代码写到一起了。如果要拆分flatten的话，那跟src就一样了，没意义了。

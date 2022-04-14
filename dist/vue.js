@@ -44,11 +44,9 @@
   }
 
   function initGlobalAPI(Vue) {
-    // 这里，挂载到Vue类上的options实际上，全都是通过调用Vue.mixin方法的options
     Vue.options = {};
 
     Vue.mixin = function (mixin) {
-      // 这里的this，当然就是指Vue实例
       this.options = mergeOptions(this.options, mixin);
       return this;
     };
@@ -172,11 +170,9 @@
     }
 
     function start(tag, attrs) {
-      // 开始要创建一个AST对象
       var node = createASTElement(tag, attrs);
 
       if (!root) {
-        // 是否是空树
         root = node; // 如果是root得话那么当前的节点就是根节点
       }
 
@@ -196,8 +192,7 @@
         text: text,
         parent: currentParent
       });
-    } // 如果匹配到尾标签了，说明需要清楚栈中存储的对象，这样我们就完成了一个标签的匹配
-
+    }
 
     function end() {
       stack.pop();
@@ -209,27 +204,23 @@
     }
 
     function parseStartTag() {
-      // 匹配标签的开始
-      var start = html.match(startTagOpen); // 如果存在的话，就放到这样的一个对象里
+      var start = html.match(startTagOpen);
 
       if (start) {
         var match = {
           tagName: start[1],
           attrs: []
-        }; // 需要删除掉匹配到的部分，匹配一部分就删除一部分
+        };
+        advance(start[0].length);
 
-        advance(start[0].length); // 如果不是开始标签的结束，就一直匹配下去
-
-        var attr, _end; // 匹配属性
-
+        var attr, _end;
 
         while (!(_end = html.match(startTagClose)) && (attr = html.match(attribute))) {
           advance(attr[0].length);
           match.attrs.push({
             name: attr[1],
             value: attr[3] || attr[4] || attr[5] || true
-          }); // 去下空格，感觉这样不太好，但是功能达到了，嘻嘻
-
+          });
           match.attrs.forEach(function (item) {
             item.name = item.name.replace(/\s+/g, "");
             item.value = item.value.replace(/\s+/g, "");
@@ -247,28 +238,24 @@
     }
 
     while (html) {
-      var textEnd = html.indexOf("<"); // 如果textEnd是0，说明是一个开始标签或是一个结束标签
+      var textEnd = html.indexOf("<");
 
       if (textEnd === 0) {
-        // 这个就是通过正则，来匹配目标字符串了
-        var startTagMatch = parseStartTag(); // 如果存在的话，那么跳过此次循环，获取到对应的标签名和属性
+        var startTagMatch = parseStartTag();
 
         if (startTagMatch) {
           start(startTagMatch.tagName, startTagMatch.attrs);
           continue;
-        } // 匹配尾部标签
+        }
 
-
-        var endTagMatch = html.match(endTag); // 同样的
+        var endTagMatch = html.match(endTag);
 
         if (endTagMatch) {
           advance(endTagMatch[0].length);
           end(endTagMatch[1]);
           continue;
         }
-      } // 如果textEnd大于0，说明就是文本的结束位置
-      // 匹配文本
-
+      }
 
       if (textEnd > 0) {
         var text = html.substring(0, textEnd);
@@ -361,18 +348,14 @@
   }
 
   function complierToFcuntion(template) {
-    // 将template转换成ast
-    var ast = parseHTML(template); //生成render方法，返回虚拟DOM
-
-    var code = codegen(ast); // 这里，通过with，让其内部的字符串适用this
-
-    code = "with(this){return ".concat(code, "}"); // 生成真正的函数
-
+    var ast = parseHTML(template);
+    var code = codegen(ast);
+    code = "with(this){return ".concat(code, "}");
     var render = new Function(code);
     return render;
   }
 
-  var id$1 = 0; // 属性的dep要收集watcher
+  var id$1 = 0;
 
   var Dep = /*#__PURE__*/function () {
     function Dep() {
@@ -380,12 +363,7 @@
 
       this.id = id$1++;
       this.subs = []; // 这里存放对应属性得watcher有哪些
-<<<<<<< HEAD
     }
-=======
-    } // 用来记录watcher的方法
-
->>>>>>> s4
 
     _createClass(Dep, [{
       key: "addSub",
@@ -395,17 +373,8 @@
     }, {
       key: "depend",
       value: function depend() {
-        // 这里不希望放置重复得watcher
-        // this.subs.push(Dep.target);
-<<<<<<< HEAD
         Dep.target.addDep(this);
       }
-=======
-        // Dep.target是Watcher，所以Dep.target调用的是watcher的方法
-        Dep.target.addDep(this);
-      } // 触发watcher的更新
-
->>>>>>> s4
     }, {
       key: "notify",
       value: function notify() {
@@ -418,7 +387,6 @@
     return Dep;
   }();
 
-<<<<<<< HEAD
   Dep.target = null;
   var stack = [];
   function pushTarget(watcher) {
@@ -430,13 +398,9 @@
     Dep.target = stack[stack.length - 1];
   }
 
-=======
->>>>>>> s4
-  var id = 0; // 每个属性有一个dep（属性就是被观察者），watcher就是观察者（属性变化了会通知观察者来更新）
-  // 这个Watcher，在目前的阶段，本质上来说，就是触发回调，当然，这个回调可能是渲染，可能是其他什么事，反正核心就是触发回调
+  var id = 0;
 
   var Watcher = /*#__PURE__*/function () {
-    // 不同的组件有不同得watcher，目前只有一个，渲染跟实例
     function Watcher(vm, exprOrFn, options, cb) {
       _classCallCheck(this, Watcher);
 
@@ -453,21 +417,15 @@
 
       this.deps = []; // 后续实现计算属性和清理工作需要用到
 
-<<<<<<< HEAD
-      this.depsId = new Set();
+      this.depsId = new Set(); // 用来确定是否重复存储了dep
+
       this.lazy = options.lazy;
       this.dirty = this.lazy;
       this.vm = vm;
       this.user = options.user;
       this.cb = cb;
       this.value = this.lazy ? undefined : this.get();
-=======
-      this.depsId = new Set(); // 用来确定是否重复存储了dep
-
-      this.get();
->>>>>>> s4
-    } // 一个视图对应多个属性，重复得属性也不用记录
-
+    }
 
     _createClass(Watcher, [{
       key: "addDep",
@@ -510,8 +468,7 @@
           this.dirty = true;
         } else {
           queueWatcher(this);
-        } // this.get(); // 重新渲染
-
+        }
       }
     }, {
       key: "run",
@@ -608,7 +565,7 @@
 
       waiting = true;
     }
-  } // 需要给每一个属性增加一个dep，目的就是收集watcher
+  }
 
   function createElementVNode(vm, tag) {
     var data = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -648,20 +605,15 @@
     var tag = vnode.tag,
         data = vnode.data,
         children = vnode.children,
-        text = vnode.text; // 判断tag是不是字符串，因为如果是文本的话，是没有tag属性的
+        text = vnode.text;
 
     if (typeof tag === "string") {
-      // 创建DOM
-      vnode.el = document.createElement(tag); // 挂载DOM上的属性
-
-      patchProps(vnode.el, data); // 循环子节点
-
+      vnode.el = document.createElement(tag);
+      patchProps(vnode.el, data);
       children.forEach(function (child) {
-        // 插入递归生成的子节点
         vnode.el.appendChild(createElm(child));
       });
     } else {
-      // 如果是文本节点，直接创建赋值就好了
       vnode.el = document.createTextNode(text);
     }
 
@@ -669,9 +621,7 @@
   }
 
   function patchProps(el, props) {
-    // 就是循环属性绑定就好了，都是原生的方法
     for (var key in props) {
-      // 特殊处理下style
       if (key === "style") {
         for (var styleName in props[key]) {
           el.style[styleName] = props.style[styleName];
@@ -683,71 +633,51 @@
   }
 
   function patch(oldVNode, vnode) {
-    // 第一次渲染的时候，oldVNode是真实的DOM元素，也就是我们传入的el。
-    // 真实的DOM元素会有nodeType属性，而我们自己定义的VNode对象是没有的
-    // 所以我们可以据此判断是否是首次挂载
     var isRealElement = oldVNode.nodeType;
 
     if (isRealElement) {
-      // 这个就是我们的div#app
-      var elm = oldVNode; // 这个就是body了
-
-      var parentElm = elm.parentNode; // 我们使用createElm方法，把我们已经构建好的vnode对象，生成真正的DOM，
-
-      var newElm = createElm(vnode); // 并且把它插入到跟div#app同级，其实就是body里拉
-
-      parentElm.insertBefore(newElm, elm.nextSibling); // 然后移除那个div#app就好了
-
+      var elm = oldVNode;
+      var parentElm = elm.parentNode;
+      var newElm = createElm(vnode);
+      parentElm.insertBefore(newElm, elm.nextSibling);
       parentElm.removeChild(elm);
       return newElm;
     }
   }
 
   function initLifeCycle(Vue) {
-    // 这个方法用来创建真正的DOM
     Vue.prototype._update = function (vnode) {
       var vm = this;
-      var el = vm.$el; // patch才是真正执行渲染挂载DOM的地方
-
+      var el = vm.$el;
       vm.$el = patch(el, vnode);
-    }; // 创建标签节点VNode
-
+    };
 
     Vue.prototype._c = function () {
       return createElementVNode.apply(void 0, [this].concat(Array.prototype.slice.call(arguments)));
-    }; // 创建文本节点VNode
-
+    };
 
     Vue.prototype._v = function () {
       return createTextVNode.apply(void 0, [this].concat(Array.prototype.slice.call(arguments)));
-    }; // 创建纯内容
-
+    };
 
     Vue.prototype._s = function (value) {
       if (_typeof(value) !== "object") return value;
       return JSON.stringify(value);
-    }; // 执行render函数，并把render里的this通过call方法指向vm
-    // 这样，我们生成的render函数内部就可以使用vm上的_c,_v,_s方法啥的了
-
+    };
 
     Vue.prototype._render = function () {
       var vm = this;
       return vm.$options.render.call(vm);
     };
-  } // 触发mount的外围方法
-
+  }
   function mountComponent(vm, el) {
-    // 调用render方法，产生虚拟节点
-    // 根据虚拟DOM生成真实DOM
-    // 插入到el中
     vm.$el = el;
 
     var updateComponent = function updateComponent() {
       vm._update(vm._render());
-    }; // 在这里，我们通过new Watcher的方式，生成一个Watcher实例
+    };
 
-
-    new Watcher(vm, updateComponent, true); // 用true标识是渲染watcher
+    new Watcher(vm, updateComponent, true);
   }
   function callHook(vm, hook) {
     var handlers = vm.$options[hook];
@@ -759,22 +689,10 @@
     }
   }
 
-  // 重写数组中的部分方法
-<<<<<<< HEAD
   var oldArrayProto = Array.prototype;
   var newArrayProto = Object.create(oldArrayProto);
   var methods = ["push", "pop", "shift", "unshift", "reverse", "sort", "splice"];
   methods.forEach(function (method) {
-=======
-  // 暂存真正数组原型对象
-  var oldArrayProto = Array.prototype; //  依据真实的数组原型对象，创建一个对象
-
-  var newArrayProto = Object.create(oldArrayProto); // 这些方法会修改原数组
-
-  var methods = ["push", "pop", "shift", "unshift", "reverse", "sort", "splice"];
-  methods.forEach(function (method) {
-    // 然后，我们在这个对象上的methods内的方法，
->>>>>>> s4
     newArrayProto[method] = function () {
       var _oldArrayProto$method;
 
@@ -782,18 +700,9 @@
         args[_key] = arguments[_key];
       }
 
-      // 这个this是调用方法的那个数组
-<<<<<<< HEAD
       var result = (_oldArrayProto$method = oldArrayProto[method]).call.apply(_oldArrayProto$method, [this].concat(args));
 
       var inserted;
-=======
-      // 执行我们自己的逻辑，并返回真正的方法调用的结果
-      var result = (_oldArrayProto$method = oldArrayProto[method]).call.apply(_oldArrayProto$method, [this].concat(args));
-
-      var inserted; // 这个就是__ob__的作用了。可以在想要的，可以获取到实例的地方，调用observe
-
->>>>>>> s4
       var ob = this.__ob__;
 
       switch (method) {
@@ -804,21 +713,13 @@
 
         case "splice":
           inserted = args.slice(2);
-<<<<<<< HEAD
       }
-=======
-      } // 我们只需要知道inserted，即新增的元素，绑定observe
-
->>>>>>> s4
 
       if (inserted) {
         ob.observeArray(inserted);
       }
 
-<<<<<<< HEAD
       ob.dep.notify();
-=======
->>>>>>> s4
       return result;
     };
   });
@@ -827,37 +728,17 @@
     function Observer(data) {
       _classCallCheck(this, Observer);
 
-<<<<<<< HEAD
       this.dep = new Dep(); // data.__ob__ = this;
 
       Object.defineProperty(data, "__ob__", {
         value: this,
         enumerable: false
       });
-=======
-      // data.__ob__ = this;
-      Object.defineProperty(data, "__ob__", {
-        value: this,
-        enumerable: false
-      }); // 如果是数组的话，要做特殊处理
->>>>>>> s4
 
       if (Array.isArray(data)) {
-        // 重写数组的方法，7个变异方法，这些方法可以修改数组本身
-        // 除了数组，数组内的引用类型也要劫持
-        data.__proto__ = newArrayProto; // 需要保留数组原有的特性，并且可以重写部分方法
-<<<<<<< HEAD
-
+        data.__proto__ = newArrayProto;
         this.observeArray(data);
       } else {
-=======
-        // 这个observeArray，并不是真正的数组观测的地方，真正的触发观测，是使用newArrayProto的方法时。
-        // 它只是为了继续观测数组的元素是否还是数组的情况
-
-        this.observeArray(data);
-      } else {
-        // 走walk
->>>>>>> s4
         this.walk(data);
       }
     }
@@ -865,10 +746,6 @@
     _createClass(Observer, [{
       key: "walk",
       value: function walk(data) {
-<<<<<<< HEAD
-=======
-        // walk就是循环data中的key，然后取绑定defineProperty
->>>>>>> s4
         Object.keys(data).forEach(function (key) {
           return defineReactive(data, key, data[key]);
         });
@@ -877,11 +754,7 @@
       key: "observeArray",
       value: function observeArray(data) {
         data.forEach(function (item) {
-<<<<<<< HEAD
-          return observe(item);
-=======
           observe(item);
->>>>>>> s4
         });
       }
     }]);
@@ -889,7 +762,6 @@
     return Observer;
   }();
 
-<<<<<<< HEAD
   function dependArray(value) {
     for (var i = 0; i < value.length; i++) {
       var current = value[i];
@@ -904,19 +776,10 @@
   function defineReactive(target, key, value) {
     var childOb = observe(value);
     var dep = new Dep();
-=======
-  function defineReactive(target, key, value) {
-    // 这里递归一下，如果value还是对象的话，oberve里面做了判断
-    observe(value);
-    var dep = new Dep(); // 这就好理解了，target就是data，
-    // 我们给data上的属性做了defineProperty的绑定。
-
->>>>>>> s4
     Object.defineProperty(target, key, {
       get: function get() {
         if (Dep.target) {
           dep.depend(); // 让这个属性得收集器记住这个watcher
-<<<<<<< HEAD
 
           if (childOb) {
             childOb.dep.depend();
@@ -925,8 +788,6 @@
               dependArray(value);
             }
           }
-=======
->>>>>>> s4
         }
 
         return value;
@@ -941,7 +802,6 @@
         dep.notify();
       }
     });
-<<<<<<< HEAD
   }
   function observe(data) {
     if (_typeof(data) !== "object" || data === null) {
@@ -951,21 +811,6 @@
     if (data.__ob__ instanceof Observer) {
       return data.__ob__;
     }
-=======
-  } // 接下来我们来看这个observe
-
-  function observe(data) {
-    // 这个不说了吧
-    if (_typeof(data) !== "object" || data === null) {
-      return;
-    } // 这个东西有点意思，等会再说
-
-
-    if (data.__ob__ instanceof Observer) {
-      return data.__ob__;
-    } // 返回个实例就完事了
-
->>>>>>> s4
 
     return new Observer(data);
   }
@@ -974,7 +819,6 @@
     var opts = vm.$options;
 
     if (opts.data) {
-<<<<<<< HEAD
       initData(vm);
     }
 
@@ -1014,62 +858,26 @@
 
   function proxy(vm, target, key) {
     Object.defineProperty(vm, key, {
-=======
-      // 我们再看初始化Data。后续这里还会有一堆初始化
-      initData(vm);
-    }
-  } // 我们先来看proxy，其实啥也没干，就是通过defineProperty
-  // 在vm实例上，绑定了_data，也就是data中的所有的属性，
-  // 这样之后我们就可以直接在vm上拿到data中的数据了。
-  // 这也是为什么我们在vue项目里，可以通过this.xxx拿到data中的xxx的原因了。
-  // 我们来分析下proxy这个方法。
-  // 我们传入的是vm，_data,以及_data中的key
-
-  function proxy(vm, target, key) {
-    // 此时，我们给vm上绑定key
-    Object.defineProperty(vm, key, {
-      // 那么我们取值的时候，实际上是取得vm._data[key]上的值
->>>>>>> s4
       get: function get() {
         return vm[target][key];
       },
       set: function set(nv) {
-<<<<<<< HEAD
-=======
-        // 我们设置值得时候，实际上也是给vm._data[key]上，设置值
-        // 这样，我们就形成了vm.xxx实际上是vm._data.xxx得代理
-        // 修改实例上中data内的属性，实际上就是修改了vm._data中的属性
->>>>>>> s4
         vm[target][key] = nv;
       }
     });
   }
 
   function initData(vm) {
-<<<<<<< HEAD
     var data = vm.$options.data;
     data = typeof data === "function" ? data.call(vm, vm) : data;
     vm._data = data;
     observe(data);
-=======
-    var data = vm.$options.data; // 这里做了一个有趣的事情，也就是说，你可以在data中有一个参数，这个参数就是vm
-    // 但是，会有一些神奇的事情，比如，你打印vm.name是undefined，打印vm却是有的。
-    // 这是为啥呢？
-    // 继续说，这里的data.call。就执行了data()方法，但是执行的时候，下面的observe和proxy都没执行呢，所以vm上肯定没有属性吖。
-    // 如果data是函数，那么就执行下，把它赋值给data变量。
-
-    data = typeof data === "function" ? data.call(vm, vm) : data;
-    vm._data = data; // 然后，我们通过observe来观测它
-
-    observe(data); // 然后，我们通过proxy，在vm上，绑定data中的属性
->>>>>>> s4
 
     for (var key in data) {
       proxy(vm, "_data", key);
     }
   }
 
-<<<<<<< HEAD
   function initComputed(vm) {
     var computed = vm.$options.computed;
     var watchers = vm._computedWatchers = {};
@@ -1085,7 +893,6 @@
   }
 
   function defineComputed(target, key, userDef) {
-    // const getter = typeof userDef === "function" ? userDef : userDef.get;
     var setter = userDef.set || function () {};
 
     Object.defineProperty(target, key, {
@@ -1110,42 +917,22 @@
     };
   }
 
-=======
->>>>>>> s4
   function initMixin(Vue) {
-    // 很简单，我们给Vue的原型上挂载了一个_init方法，以便我们可以在Vue类中执行。
-    // 这里还要注意，整个Vue都是通过在类的实例上绑定方法来通信的，然后才可以在Vue的各个地方调用
     Vue.prototype._init = function (options) {
-      var vm = this; // 在vm上绑定传入的options。
-      // 这里的this.constructor.options，就是通过mixin方法，传入的options
-      // options，就是new Vue时传入的那个
-
+      var vm = this;
       vm.$options = mergeOptions(this.constructor.options, options);
-<<<<<<< HEAD
       callHook(vm, "beforeCreated");
-=======
-      callHook(vm, "beforeCreated"); // 然后再去初始化状态
-
->>>>>>> s4
       initState(vm);
-      callHook(vm, "created"); // 真正的挂载调用是$mount,记不记得我们使用Vue开发项目的时候，通常都会手动调用一下$mount?
-      // 其实你不手动调用，传个el也行的。
+      callHook(vm, "created");
 
       if (options.el) {
         vm.$mount(options.el);
       }
-    }; // 真正的挂载调用时机
-    // 还是强调一下，你只有new Vue的时候，这个才会执行，不然只是实例上的一个方法罢了。
-
+    };
 
     Vue.prototype.$mount = function (el) {
-      var vm = this; // 找el节点，也就是我们需要挂载的根节点
-
-      el = document.querySelector(el); // 判断没有render函数的话，有的话这里没写，嘻嘻
-      // 没有的话
-      // 这就是各种判断，有没有传template参数，传了的话就优先使用template
-      // 没传就使用传入的挂载的根节点的内容作为template
-
+      var vm = this;
+      el = document.querySelector(el);
       var ops = vm.$options;
 
       if (!ops.render) {
@@ -1160,29 +947,21 @@
         }
 
         if (template && el) {
-          // 然后传入template，通过complierToFcuntion方法，拿到render函数，注意这里的render是个真正的方法了
-          var render = complierToFcuntion(template); // 放到vm.$options上
-
+          var render = complierToFcuntion(template);
           ops.render = render;
         }
-      } // 然后，开始挂载
-
+      }
 
       mountComponent(vm, el);
     };
   }
 
-  // 所以，注意这里，我们声明了一个Vue，但是，此时并没有执行new Vue。注意，我说的此时，就是js引擎执行到这里的时候。
-
   function Vue(options) {
-    // 这个this，指的的vm，也就是Vue的实例
     this._init(options);
   }
 
-  Vue.prototype.$nextTick = nextTick; // 所以，在这里，我们引入了initMixin，并且执行了initMixin。那么我们去initMixin中看下它干了啥
-
-  initMixin(Vue); // 首先啊，我们通过initLifeCycle给Vue类上绑定一些方法
-
+  Vue.prototype.$nextTick = nextTick;
+  initMixin(Vue);
   initLifeCycle(Vue);
   initGlobalAPI(Vue);
 
