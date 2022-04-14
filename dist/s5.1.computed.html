@@ -4,10 +4,16 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>计算属性</title>
   </head>
   <body>
-    <div id="app">{{fullname}} {{fullname}} {{fullname}} {{fullname}}</div>
+    <div id="app">
+      <ul>
+        <li>{{fullname}} {{fullname}} {{fullname}} {{fullname}}</li>
+        <li>{{full2name}} {{full2name}} {{full2name}} {{full2name}}</li>
+        <li>{{full0name}} {{full0name}} {{full0name}} {{full0name}}</li>
+      </ul>
+    </div>
     <script src="vue.js"></script>
     <script>
       const vm = new Vue({
@@ -19,13 +25,26 @@
           };
         },
         computed: {
+          full0name() {
+            console.log("run0");
+            return this.name;
+          },
           fullname() {
             console.log("run");
             return this.name + this.age;
           },
+          full2name: {
+            get() {
+              console.log("run2");
+              return this.name + this.age;
+            },
+            set(nv) {
+              console.log(nv);
+            },
+          },
         },
       });
-      // 5.1.1 computed
+      // 5.1 computed
       // 多次调用，只触发一次
       setTimeout(() => {
         vm.name = "wong";

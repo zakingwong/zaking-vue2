@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>watch</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="vue.js"></script>
+    <script>
+      // 5.2 watch
+      const vm = new Vue({
+        el: "#app",
+        data() {
+          return {
+            name: "zaking",
+            age: 20,
+          };
+        },
+        // 暂未实现，第三种
+        // methods: {
+        //   fn(nv, ov) {
+        //     console.log(nv, ov, "fn");
+        //   },
+        // },
+        watch: {
+          // 第六种，对象，暂未实现
+          // name: {
+          //   handler: function (nv, ov) {
+          //     console.log(nv, ov);
+          //   },
+          //   deep: true,
+          // },
+          // 第一种写法，函数
+          name(nv, ov) {
+            console.log(nv, ov, "watch-function");
+          },
+          // 第二种写法，数组
+          // 有bug，第一种和第二种不能同时存在
+          // name: [
+          //   // "fn", // 暂未实现
+          //   (nv, ov) => {
+          //     console.log(nv, ov, "watch-arr");
+          //   },
+          //   (nv, ov) => {
+          //     console.log(nv, ov, "watch-arr");
+          //   },
+          // ],
+        },
+      });
+      // 第四种，无论哪种写法，都会转换成$watch
+      vm.$watch("name", (nv, ov) => {
+        console.log(nv, ov, "$watch");
+      });
+      // 第五种
+      vm.$watch(
+        () => vm.name,
+        (nv, ov) => {
+          console.log(nv, ov, "$watch-fn");
+        }
+      );
+      // 多次调用，只触发一次
+      setTimeout(() => {
+        vm.name = "wong";
+        vm.name = "wong1";
+        vm.name = "wong2";
+        vm.name = "wong3";
+      }, 2000);
+    </script>
+  </body>
+</html>

@@ -6,6 +6,8 @@ class Watcher {
   constructor(vm, exprOrFn, options, cb) {
     this.id = id++;
     this.renderWatcher = options; // 标识是一个渲染watcher
+    // watch.1-1.2
+    // 如果是字符串就变成函数好了，没了
     if (typeof exprOrFn === "string") {
       this.getter = function () {
         return vm[exprOrFn];
@@ -15,12 +17,13 @@ class Watcher {
     }
     this.deps = []; // 后续实现计算属性和清理工作需要用到
     this.depsId = new Set(); // 用来确定是否重复存储了dep
-    this.lazy = options.lazy;
-    this.dirty = this.lazy;
+    this.lazy = options.lazy; // 5.3.1
+    this.dirty = this.lazy; // 5.3.1
     this.vm = vm;
-    this.user = options.user;
+    this.user = options.user; // watch.1-1.3，标识是否是用户自己的watch
     this.cb = cb;
-    this.value = this.lazy ? undefined : this.get();
+    // watch.1-1.4，把老值存起来
+    this.value = this.lazy ? undefined : this.get(); // 5.3.1 如果是true的话就不执行咯
   }
   addDep(dep) {
     let id = dep.id;
@@ -30,6 +33,7 @@ class Watcher {
       dep.addSub(this); // watcher已经记住dep了，现在需要dep也记住watcher
     }
   }
+  // 计算属性触发执行回调
   evaluate() {
     this.value = this.get();
     this.dirty = false;
@@ -38,6 +42,7 @@ class Watcher {
     pushTarget(this);
     let value = this.getter.call(this.vm);
     popTarget();
+    // 把值返回，就获得到了用户定义的computed的值
     return value;
   }
   depend() {
@@ -47,6 +52,7 @@ class Watcher {
     }
   }
   update() {
+    // 如果是计算属性的值变化了，就标识它脏了，下一次获取，要重新计算，不走缓存的value了
     if (this.lazy) {
       this.dirty = true;
     } else {
@@ -54,8 +60,8 @@ class Watcher {
     }
   }
   run() {
-    let ov = this.value;
-    let nv = this.get();
+    let ov = this.value; // 通过this.value就能拿到老值了
+    let nv = this.get(); // watch.1-1.4，再更新，我们就拿到了新值
     if (this.user) {
       this.cb.call(this.vm, nv, ov);
     }

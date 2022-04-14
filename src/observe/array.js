@@ -23,6 +23,8 @@ methods.forEach((method) => {
     if (inserted) {
       ob.observeArray(inserted);
     }
+    // 5.3.3
+    // 数组变化了，通知对应的watch实现更新
     ob.dep.notify();
     return result;
   };

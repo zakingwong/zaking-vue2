@@ -12,8 +12,10 @@ initMixin(Vue);
 initLifeCycle(Vue);
 initGlobalAPI(Vue);
 
+// watch.1-1,最终的核心就是这个方法
 Vue.prototype.$watch = function (exprOrFn, cb, options = {}) {
-  console.log(exprOrFn, cb, options);
+  // exprOrFn：
+  // name 或者是 () => name，我们去Watcher里处理，user代表是用户创建的
   new Watcher(this, exprOrFn, { user: true }, cb);
 };
 

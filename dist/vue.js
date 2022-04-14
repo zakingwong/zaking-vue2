@@ -387,7 +387,10 @@
     return Dep;
   }();
 
-  Dep.target = null;
+  Dep.target = null; // 5.1 先修改下dep，把存watcher的结构维护成一个栈
+  // dep记住的watcher，我们来维护一个栈结构
+  // 一个dep，可能会跟多个不同的watcher关联
+
   var stack = [];
   function pushTarget(watcher) {
     stack.push(watcher);
@@ -406,6 +409,8 @@
 
       this.id = id++;
       this.renderWatcher = options; // 标识是一个渲染watcher
+      // watch.1-1.2
+      // 如果是字符串就变成函数好了，没了
 
       if (typeof exprOrFn === "string") {
         this.getter = function () {
@@ -419,12 +424,16 @@
 
       this.depsId = new Set(); // 用来确定是否重复存储了dep
 
-      this.lazy = options.lazy;
-      this.dirty = this.lazy;
+      this.lazy = options.lazy; // 5.3.1
+
+      this.dirty = this.lazy; // 5.3.1
+
       this.vm = vm;
-      this.user = options.user;
-      this.cb = cb;
-      this.value = this.lazy ? undefined : this.get();
+      this.user = options.user; // watch.1-1.3，标识是否是用户自己的watch
+
+      this.cb = cb; // watch.1-1.4，把老值存起来
+
+      this.value = this.lazy ? undefined : this.get(); // 5.3.1 如果是true的话就不执行咯
     }
 
     _createClass(Watcher, [{
@@ -437,7 +446,8 @@
           this.depsId.add(id);
           dep.addSub(this); // watcher已经记住dep了，现在需要dep也记住watcher
         }
-      }
+      } // 计算属性触发执行回调
+
     }, {
       key: "evaluate",
       value: function evaluate() {
@@ -449,7 +459,8 @@
       value: function get() {
         pushTarget(this);
         var value = this.getter.call(this.vm);
-        popTarget();
+        popTarget(); // 把值返回，就获得到了用户定义的computed的值
+
         return value;
       }
     }, {
@@ -464,6 +475,7 @@
     }, {
       key: "update",
       value: function update() {
+        // 如果是计算属性的值变化了，就标识它脏了，下一次获取，要重新计算，不走缓存的value了
         if (this.lazy) {
           this.dirty = true;
         } else {
@@ -473,8 +485,9 @@
     }, {
       key: "run",
       value: function run() {
-        var ov = this.value;
-        var nv = this.get();
+        var ov = this.value; // 通过this.value就能拿到老值了
+
+        var nv = this.get(); // watch.1-1.4，再更新，我们就拿到了新值
 
         if (this.user) {
           this.cb.call(this.vm, nv, ov);
@@ -717,7 +730,9 @@
 
       if (inserted) {
         ob.observeArray(inserted);
-      }
+      } // 5.3.3
+      // 数组变化了，通知对应的watch实现更新
+
 
       ob.dep.notify();
       return result;
@@ -728,6 +743,7 @@
     function Observer(data) {
       _classCallCheck(this, Observer);
 
+      // 5.3.1
       this.dep = new Dep(); // data.__ob__ = this;
 
       Object.defineProperty(data, "__ob__", {
@@ -760,7 +776,8 @@
     }]);
 
     return Observer;
-  }();
+  }(); // 递归多了性能肯定会很差
+
 
   function dependArray(value) {
     for (var i = 0; i < value.length; i++) {
@@ -774,6 +791,8 @@
   }
 
   function defineReactive(target, key, value) {
+    // 5.3.2
+    // 对所有的对象都进行属性劫持，childOb.dep用来收集依赖
     var childOb = observe(value);
     var dep = new Dep();
     Object.defineProperty(target, key, {
@@ -782,7 +801,8 @@
           dep.depend(); // 让这个属性得收集器记住这个watcher
 
           if (childOb) {
-            childOb.dep.depend();
+            childOb.dep.depend(); // 让数组和对象本身也实现依赖收集
+            // 让数组内的数组，再做一层依赖收集
 
             if (Array.isArray(value)) {
               dependArray(value);
@@ -823,8 +843,10 @@
     }
 
     if (opts.computed) {
+      // 在这里开始，初始化Computed的工作
       initComputed(vm);
-    }
+    } // watch.1
+
 
     if (opts.watch) {
       initWatch(vm);
@@ -833,10 +855,10 @@
 
   function initWatch(vm) {
     var watch = vm.$options.watch;
-    console.log(watch);
 
     for (var key in watch) {
-      var handler = watch[key];
+      var handler = watch[key]; // 可能是字符串，数组，函数
+      // 如果是数组的话，循环一下就好了
 
       if (Array.isArray(handler)) {
         for (var i = 0; i < handler.length; i++) {
@@ -846,7 +868,8 @@
         createWatcher(vm, key, handler);
       }
     }
-  }
+  } // 给每个实例上增加的属性和对应的处理函数
+
 
   function createWatcher(vm, key, handler) {
     if (typeof handler === "string") {
@@ -876,26 +899,39 @@
     for (var key in data) {
       proxy(vm, "_data", key);
     }
-  }
+  } // 5.2 初始化computed
+  // 计算属性本身不收集依赖，只会让自己内部绑定的属性去收集依赖
+
 
   function initComputed(vm) {
-    var computed = vm.$options.computed;
-    var watchers = vm._computedWatchers = {};
+    var computed = vm.$options.computed; // 5.4 把watcher存起来，后面会用到，存到vm上，在createComputedGetter中会用到
+
+    var watchers = vm._computedWatchers = {}; // 遍历computed中的计算属性
 
     for (var key in computed) {
-      var userDef = computed[key];
-      var fn = typeof userDef === "function" ? userDef : userDef.get;
+      // userDef就是computed中的每一个计算属性
+      var userDef = computed[key]; // 我们判断一下是函数还是对象，如果是函数的话，那么就直接用函数，如果是对象的话，就用对象的get方法
+
+      var fn = typeof userDef === "function" ? userDef : userDef.get; // 5.3 我们进入到watcher里
+      // 这里，之前我们使用Watcher的时候，一旦new了，就会立即执行回调，这里我们肯定不希望computed的watcher立即执行get。
+      // 所以，我们要额外的传入一个参数，lazy，表示不需要new的时候就立即执行
+
       watchers[key] = new Watcher(vm, fn, {
         lazy: true
-      });
+      }); // 5.2.x 这是中间阶段的方式，如果是对象的形式，直接把get和set传给defineProterty。如果是函数，会做简单的处理
+      // 但是这样会有很大的问题，大家可以自己试一下
+      // defineComputed(vm, key, fn, userDef); //2.x
+
       defineComputed(vm, key, userDef);
     }
   }
 
   function defineComputed(target, key, userDef) {
+    // function defineComputed(target, key, userDef) { //2.x
     var setter = userDef.set || function () {};
 
     Object.defineProperty(target, key, {
+      // get: fn, //2.x
       get: createComputedGetter(key),
       set: setter
     });
@@ -906,12 +942,15 @@
       var watcher = this._computedWatchers[key];
 
       if (watcher.dirty) {
+        // 5.5 第一次取值后，dirty就会变为false，下一次就不会再走evaluate了
         watcher.evaluate();
-      }
+      } // 5.6 计算属性出栈后，还要让计算属性watcher里面的属性，去绑定上一层的watcher
+
 
       if (Dep.target) {
         watcher.depend();
-      }
+      } // 这个时候执行完watcher.evaluate，watcher上已经有了value，返回即可
+
 
       return watcher.value;
     };
@@ -963,11 +1002,11 @@
   Vue.prototype.$nextTick = nextTick;
   initMixin(Vue);
   initLifeCycle(Vue);
-  initGlobalAPI(Vue);
+  initGlobalAPI(Vue); // watch.1-1,最终的核心就是这个方法
 
   Vue.prototype.$watch = function (exprOrFn, cb) {
-    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-    console.log(exprOrFn, cb, options);
+    // exprOrFn：
+    // name 或者是 () => name，我们去Watcher里处理，user代表是用户创建的
     new Watcher(this, exprOrFn, {
       user: true
     }, cb);

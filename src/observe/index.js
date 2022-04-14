@@ -2,6 +2,7 @@ import newArrayProto from "./array";
 import Dep from "./dep";
 class Observer {
   constructor(data) {
+    // 5.3.1
     this.dep = new Dep();
 
     // data.__ob__ = this;
@@ -25,7 +26,7 @@ class Observer {
     });
   }
 }
-
+// 递归多了性能肯定会很差
 function dependArray(value) {
   for (let i = 0; i < value.length; i++) {
     let current = value[i];
@@ -37,6 +38,8 @@ function dependArray(value) {
 }
 
 export function defineReactive(target, key, value) {
+  // 5.3.2
+  // 对所有的对象都进行属性劫持，childOb.dep用来收集依赖
   let childOb = observe(value);
   let dep = new Dep();
   Object.defineProperty(target, key, {
@@ -44,7 +47,8 @@ export function defineReactive(target, key, value) {
       if (Dep.target) {
         dep.depend(); // 让这个属性得收集器记住这个watcher
         if (childOb) {
-          childOb.dep.depend();
+          childOb.dep.depend(); // 让数组和对象本身也实现依赖收集
+          // 让数组内的数组，再做一层依赖收集
           if (Array.isArray(value)) {
             dependArray(value);
           }
