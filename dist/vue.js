@@ -4,54 +4,6 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Vue = factory());
 })(this, (function () { 'use strict';
 
-  var strats = {};
-  var LIFECYCLE = ["beforeCreate", "created"];
-  LIFECYCLE.forEach(function (hook) {
-    strats[hook] = function (p, c) {
-      if (c) {
-        if (p) {
-          return p.concat(c);
-        } else {
-          return [c];
-        }
-      } else {
-        return p;
-      }
-    };
-  });
-  function mergeOptions(parent, child) {
-    var options = {};
-
-    for (var key in parent) {
-      mergeField(key);
-    }
-
-    for (var _key in child) {
-      if (!parent.hasOwnProperty(_key)) {
-        mergeField(_key);
-      }
-    }
-
-    function mergeField(key) {
-      if (strats[key]) {
-        options[key] = strats[key](parent[key], child[key]);
-      } else {
-        options[key] = child[key] || parent[key];
-      }
-    }
-
-    return options;
-  }
-
-  function initGlobalAPI(Vue) {
-    Vue.options = {};
-
-    Vue.mixin = function (mixin) {
-      this.options = mergeOptions(this.options, mixin);
-      return this;
-    };
-  }
-
   function _typeof(obj) {
     "@babel/helpers - typeof";
 
@@ -355,6 +307,54 @@
     return render;
   }
 
+  var strats = {};
+  var LIFECYCLE = ["beforeCreate", "created"];
+  LIFECYCLE.forEach(function (hook) {
+    strats[hook] = function (p, c) {
+      if (c) {
+        if (p) {
+          return p.concat(c);
+        } else {
+          return [c];
+        }
+      } else {
+        return p;
+      }
+    };
+  });
+  function mergeOptions(parent, child) {
+    var options = {};
+
+    for (var key in parent) {
+      mergeField(key);
+    }
+
+    for (var _key in child) {
+      if (!parent.hasOwnProperty(_key)) {
+        mergeField(_key);
+      }
+    }
+
+    function mergeField(key) {
+      if (strats[key]) {
+        options[key] = strats[key](parent[key], child[key]);
+      } else {
+        options[key] = child[key] || parent[key];
+      }
+    }
+
+    return options;
+  }
+
+  function initGlobalAPI(Vue) {
+    Vue.options = {};
+
+    Vue.mixin = function (mixin) {
+      this.options = mergeOptions(this.options, mixin);
+      return this;
+    };
+  }
+
   var id$1 = 0;
 
   var Dep = /*#__PURE__*/function () {
@@ -614,6 +614,10 @@
     };
   }
 
+  function isSameVnode(vnode1, vnode2) {
+    return vnode1.tag === vnode2.tag && vnode1.key === vnode2.key;
+  }
+
   function createElm(vnode) {
     var tag = vnode.tag,
         data = vnode.data,
@@ -622,7 +626,7 @@
 
     if (typeof tag === "string") {
       vnode.el = document.createElement(tag);
-      patchProps(vnode.el, data);
+      patchProps(vnode.el, {}, data);
       children.forEach(function (child) {
         vnode.el.appendChild(createElm(child));
       });
@@ -632,19 +636,35 @@
 
     return vnode.el;
   }
+  function patchProps(el) {
+    var oldProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var props = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+    // 老的属性中有，新的没有，要删除掉老的。
+    var oldStyles = oldProps.style || {};
+    var newStyles = props.style || {};
 
-  function patchProps(el, props) {
-    for (var key in props) {
-      if (key === "style") {
-        for (var styleName in props[key]) {
+    for (var key in oldStyles) {
+      if (!newStyles[key]) {
+        el.style[key] = "";
+      }
+    }
+
+    for (var _key in oldProps) {
+      if (!props[_key]) {
+        el.removeAttribute(_key);
+      }
+    }
+
+    for (var _key2 in props) {
+      if (_key2 === "style") {
+        for (var styleName in props[_key2]) {
           el.style[styleName] = props.style[styleName];
         }
       } else {
-        el.setAttribute(key, props[key]);
+        el.setAttribute(_key2, props[_key2]);
       }
     }
   }
-
   function patch(oldVNode, vnode) {
     var isRealElement = oldVNode.nodeType;
 
@@ -655,6 +675,140 @@
       parentElm.insertBefore(newElm, elm.nextSibling);
       parentElm.removeChild(elm);
       return newElm;
+    } else {
+      // diff
+      // 1.两个节点不是同一个节点，没有比对，直接把老的换成新的
+      // 2.两个节点是同一个节点，判断节点的tag和节点的key
+      // 比较两个节点的属性是否有差异，复用老的节点，将差异的属性更新
+      // 3.节点比较完毕后就需要比较两个人的子节点
+      return patchVnode(oldVNode, vnode);
+    }
+  }
+
+  function patchVnode(oldVNode, vnode) {
+    if (!isSameVnode(oldVNode, vnode)) {
+      var _el = createElm(vnode);
+
+      oldVNode.el.parentNode.replaceChild(_el, oldVNode.el);
+      return _el;
+    }
+
+    var el = vnode.el = oldVNode.el; // 复用老节点的元素
+
+    if (!oldVNode.tag) {
+      // 是文本的话
+      if (oldVNode.text !== vnode.text) {
+        el.textContent = vnode.text;
+      }
+    } // 是标签，我们需要比对标签的属性
+
+
+    patchProps(el, oldVNode.data, vnode.data); // 比较儿子节点
+    // 一方有，一方没有
+    // 两方都有
+
+    var oldChildren = oldVNode.children || [];
+    var newChildren = vnode.children || [];
+
+    if (oldChildren.length > 0 && newChildren.length > 0) {
+      // 完整的diff算法，需要比较两个
+      updateChildren(el, oldChildren, newChildren);
+    } else if (newChildren.length > 0) {
+      // 没有老的，有新的
+      mountChildren(el, newChildren);
+    } else if (oldChildren.length > 0) {
+      // 新的没有，老的有，要删除
+      unmountChildren(el);
+    }
+
+    return el;
+  }
+
+  function mountChildren(el, newChildren) {
+    for (var i = 0; i < newChildren.length; i++) {
+      var child = newChildren[i];
+      el.appendChild(createElm(child));
+    }
+  }
+
+  function unmountChildren(el, oldChildren) {
+    el.innerHTML = "";
+  }
+
+  function updateChildren(el, oldChildren, newChildren) {
+    var oldStartIndex = 0;
+    var newStartIndex = 0;
+    var oldEndIndex = oldChildren.length - 1;
+    var newEndIndex = newChildren.length - 1;
+    var oldStartVnode = oldChildren[0];
+    var newStartVnode = newChildren[0];
+    var oldEndVnode = oldChildren[oldEndIndex];
+    var newEndVnode = newChildren[newEndIndex];
+
+    function makeIndexByKey(children) {
+      var map = {};
+      children.forEach(function (child, index) {
+        map[child.key] = index;
+      });
+      return map;
+    }
+
+    var map = makeIndexByKey(oldChildren);
+
+    while (oldStartIndex <= oldEndIndex && newStartIndex <= newEndIndex) {
+      if (!oldStartVnode) {
+        oldStartVnode = oldChildren[++oldStartIndex];
+      } else if (!oldEndVnode) {
+        oldEndVnode = oldChildren[--oldEndIndex];
+      } else if (isSameVnode(oldStartVnode, newStartVnode)) {
+        patchVnode(oldStartVnode, newStartVnode);
+        oldStartVnode = oldChildren[++oldStartIndex];
+        newStartVnode = newChildren[++newStartIndex];
+      } else if (isSameVnode(oldEndVnode, newEndVnode)) {
+        patchVnode(oldEndVnode, newEndVnode);
+        oldEndVnode = oldChildren[--oldEndIndex];
+        newEndVnode = newChildren[--newEndIndex];
+      } else if (isSameVnode(oldEndVnode, newStartVnode)) {
+        patchVnode(oldEndVnode, newStartVnode);
+        el.insertBefore(oldEndVnode.el, oldStartVnode.el);
+        oldEndVnode = oldChildren[--oldEndIndex];
+        newStartVnode = newChildren[++newStartIndex];
+      } else if (isSameVnode(oldStartVnode, newEndVnode)) {
+        patchVnode(oldStartVnode, newEndVnode);
+        el.insertBefore(oldStartVnode.el, oldEndVnode.el.nextSibling);
+        oldStartVnode = oldChildren[++oldStartIndex];
+        newEndVnode = newChildren[--newEndIndex];
+      } else {
+        var moveIndex = map[newStartVnode.key];
+
+        if (moveIndex !== undefined) {
+          var moveVnode = oldChildren[moveIndex];
+          el.insertBefore(moveVnode.el, oldStartVnode.el);
+          oldChildren[moveIndex] = undefined;
+          patchVnode(moveVnode, newStartVnode);
+        } else {
+          el.insertBefore(createElm(newStartVnode), oldStartVnode.el);
+        }
+
+        newStartVnode = newChildren[++newStartIndex];
+      }
+    }
+
+    if (newStartIndex <= newEndIndex) {
+      for (var i = newStartIndex; i <= newEndIndex; i++) {
+        var childEl = createElm(newChildren[i]);
+        var anchor = newChildren[newEndIndex + 1] ? newChildren[newEndIndex + 1].el : null;
+        el.insertBefore(childEl, anchor);
+      }
+    }
+
+    if (oldStartIndex <= oldEndIndex) {
+      for (var _i = oldStartIndex; _i <= oldEndIndex; _i++) {
+        if (oldChildren[_i].el) {
+          var _childEl = oldChildren[_i].el;
+          el.removeChild(_childEl);
+        }
+      }
     }
   }
 
@@ -956,6 +1110,18 @@
     };
   }
 
+  function initStateMixin(Vue) {
+    Vue.prototype.$nextTick = nextTick; // watch.1-1,最终的核心就是这个方法
+
+    Vue.prototype.$watch = function (exprOrFn, cb) {
+      // exprOrFn：
+      // name 或者是 () => name，我们去Watcher里处理，user代表是用户创建的
+      new Watcher(this, exprOrFn, {
+        user: true
+      }, cb);
+    };
+  }
+
   function initMixin(Vue) {
     Vue.prototype._init = function (options) {
       var vm = this;
@@ -999,18 +1165,31 @@
     this._init(options);
   }
 
-  Vue.prototype.$nextTick = nextTick;
   initMixin(Vue);
   initLifeCycle(Vue);
-  initGlobalAPI(Vue); // watch.1-1,最终的核心就是这个方法
-
-  Vue.prototype.$watch = function (exprOrFn, cb) {
-    // exprOrFn：
-    // name 或者是 () => name，我们去Watcher里处理，user代表是用户创建的
-    new Watcher(this, exprOrFn, {
-      user: true
-    }, cb);
-  };
+  initGlobalAPI(Vue);
+  initStateMixin(Vue);
+  var render1 = complierToFcuntion("<ul key=\"x\" style=\"color:red;\">\n    <li key=\"a\">a</li>\n    <li key=\"b\">b</li>\n    <li key=\"c\">c</li>\n    <li key=\"d\">d</li>\n  </ul>");
+  var vm1 = new Vue({
+    data: {
+      name: "zaking"
+    }
+  });
+  var prevVNode = render1.call(vm1);
+  var render2 = complierToFcuntion("<ul key=\"x\" style=\"background:blue;\">\n    <li key=\"b\">b</li>\n    <li key=\"m\">m</li>\n    <li key=\"a\">a</li>\n    <li key=\"p\">p</li>\n    <li key=\"c\">c</li>\n    <li key=\"q\">q</li>\n</ul>");
+  var vm2 = new Vue({
+    data: {
+      name: "wong"
+    }
+  });
+  var nextVNode = render2.call(vm2);
+  var el = createElm(prevVNode);
+  document.body.appendChild(el);
+  createElm(nextVNode);
+  setTimeout(function () {
+    // el.parentNode.replaceChild(newEl, el);
+    patch(prevVNode, nextVNode);
+  }, 1000);
 
   return Vue;
 

@@ -1,6 +1,7 @@
 import Dep from "./observe/dep";
 import { observe } from "./observe/index";
-import Watcher from "./observe/watcher";
+import Watcher, { nextTick } from "./observe/watcher";
+
 export function initState(vm) {
   const opts = vm.$options;
   if (opts.data) {
@@ -102,5 +103,15 @@ function createComputedGetter(key) {
     }
     // 这个时候执行完watcher.evaluate，watcher上已经有了value，返回即可
     return watcher.value;
+  };
+}
+
+export function initStateMixin(Vue) {
+  Vue.prototype.$nextTick = nextTick;
+  // watch.1-1,最终的核心就是这个方法
+  Vue.prototype.$watch = function (exprOrFn, cb, options = {}) {
+    // exprOrFn：
+    // name 或者是 () => name，我们去Watcher里处理，user代表是用户创建的
+    new Watcher(this, exprOrFn, { user: true }, cb);
   };
 }
