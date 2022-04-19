@@ -7,6 +7,24 @@
     <title>Diff</title>
   </head>
   <body>
+    <div id="app">
+      <span>
+        <a>{{name}}</a>
+      </span>
+    </div>
     <script src="./vue.js"></script>
+    <script>
+      const vm = new Vue({
+        el: "#app",
+        data() {
+          return {
+            name: "zaking",
+          };
+        },
+      });
+      setTimeout(() => {
+        vm.name = "wong";
+      }, 2000);
+    </script>
   </body>
 </html>

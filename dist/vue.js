@@ -816,7 +816,14 @@
     Vue.prototype._update = function (vnode) {
       var vm = this;
       var el = vm.$el;
-      vm.$el = patch(el, vnode);
+      var prevVNode = vm._vnode;
+      vm._vnode = vnode;
+
+      if (prevVNode) {
+        vm.$el = patch(prevVNode, vnode);
+      } else {
+        vm.$el = patch(el, vnode);
+      }
     };
 
     Vue.prototype._c = function () {
@@ -1168,28 +1175,7 @@
   initMixin(Vue);
   initLifeCycle(Vue);
   initGlobalAPI(Vue);
-  initStateMixin(Vue);
-  var render1 = complierToFcuntion("<ul key=\"x\" style=\"color:red;\">\n    <li key=\"a\">a</li>\n    <li key=\"b\">b</li>\n    <li key=\"c\">c</li>\n    <li key=\"d\">d</li>\n  </ul>");
-  var vm1 = new Vue({
-    data: {
-      name: "zaking"
-    }
-  });
-  var prevVNode = render1.call(vm1);
-  var render2 = complierToFcuntion("<ul key=\"x\" style=\"background:blue;\">\n    <li key=\"b\">b</li>\n    <li key=\"m\">m</li>\n    <li key=\"a\">a</li>\n    <li key=\"p\">p</li>\n    <li key=\"c\">c</li>\n    <li key=\"q\">q</li>\n</ul>");
-  var vm2 = new Vue({
-    data: {
-      name: "wong"
-    }
-  });
-  var nextVNode = render2.call(vm2);
-  var el = createElm(prevVNode);
-  document.body.appendChild(el);
-  createElm(nextVNode);
-  setTimeout(function () {
-    // el.parentNode.replaceChild(newEl, el);
-    patch(prevVNode, nextVNode);
-  }, 1000);
+  initStateMixin(Vue); // 模拟
 
   return Vue;
 
