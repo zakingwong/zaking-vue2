@@ -1,8 +1,22 @@
 import { isSameVnode } from "./index";
 
+function createComponent(vnode) {
+  let i = vnode.data;
+  if ((i = i.hook) && (i = i.init)) {
+    i(vnode);
+  }
+  if (vnode.componentInstance) {
+    return true;
+  }
+}
+
 export function createElm(vnode) {
   let { tag, data, children, text } = vnode;
   if (typeof tag === "string") {
+    if (createComponent(vnode)) {
+      return vnode.componentInstance.$el;
+    }
+
     vnode.el = document.createElement(tag);
     patchProps(vnode.el, {}, data);
     children.forEach((child) => {
@@ -15,7 +29,7 @@ export function createElm(vnode) {
 }
 
 export function patchProps(el, oldProps = {}, props = {}) {
-  // 老的属性中有，新的没有，要删除掉老的。
+  // 老的属性中 有，新的没有，要删除掉老的。
   let oldStyles = oldProps.style || {};
   let newStyles = props.style || {};
   for (let key in oldStyles) {
@@ -42,6 +56,9 @@ export function patchProps(el, oldProps = {}, props = {}) {
 }
 
 export function patch(oldVNode, vnode) {
+  if (!oldVNode) {
+    return createElm(vnode);
+  }
   const isRealElement = oldVNode.nodeType;
   if (isRealElement) {
     const elm = oldVNode;

@@ -322,6 +322,19 @@
       }
     };
   });
+
+  strats.components = function (parentValue, childValue) {
+    var res = Object.create(parentValue);
+
+    if (childValue) {
+      for (var key in childValue) {
+        res[key] = childValue[key];
+      }
+    }
+
+    return res;
+  };
+
   function mergeOptions(parent, child) {
     var options = {};
 
@@ -347,11 +360,34 @@
   }
 
   function initGlobalAPI(Vue) {
-    Vue.options = {};
+    Vue.options = {
+      _base: Vue
+    };
 
     Vue.mixin = function (mixin) {
       this.options = mergeOptions(this.options, mixin);
       return this;
+    };
+
+    Vue.extend = function (options) {
+      function Sub() {
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+        this._init(options);
+      }
+
+      Sub.prototype = Object.create(Vue.prototype);
+      Sub.prototype.constructor = Sub;
+      Sub.options = mergeOptions(Vue.options, options);
+      return Sub;
+    };
+
+    Vue.options.components = {};
+
+    Vue.component = function (id, definition) {
+      definition = typeof definition === "function" ? definition : Vue.extend(definition);
+      Vue.options.components[id] = definition;
+      console.log(Vue.options.components);
     };
   }
 
@@ -580,6 +616,10 @@
     }
   }
 
+  var isReservedTag = function isReservedTag(tag) {
+    return ["a", "div", "p", "span", "ul", "li", "button"].includes(tag);
+  };
+
   function createElementVNode(vm, tag) {
     var data = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
@@ -597,25 +637,63 @@
       children[_key - 3] = arguments[_key];
     }
 
-    return vnode(vm, tag, key, data, children);
+    if (isReservedTag(tag)) {
+      return vnode(vm, tag, key, data, children);
+    } else {
+      // 创造组件虚拟节点
+      var Ctor = vm.$options.components[tag]; // Ctor有可能是对象，有可能是构造函数
+
+      return createComponentVnode(vm, tag, key, data, children, Ctor);
+    }
   }
+
+  function createComponentVnode(vm, tag, key, data, children, Ctor) {
+    if (_typeof(Ctor) === "object") {
+      Ctor = vm.$options._base.extend(Ctor);
+    }
+
+    data.hook = {
+      init: function init(vnode) {
+        // 稍后创建真实节点时，如果是组件则调用此init方法
+        var instance = vnode.componentInstance = new vnode.componentOptions.Ctor();
+        instance.$mount();
+      }
+    };
+    return vnode(vm, tag, key, data, children, null, {
+      Ctor: Ctor
+    });
+  }
+
   function createTextVNode(vm, text) {
     return vnode(vm, undefined, undefined, undefined, undefined, text);
   }
 
-  function vnode(vm, tag, key, data, children, text) {
+  function vnode(vm, tag, key, data, children, text, componentOptions) {
     return {
       vm: vm,
       tag: tag,
       key: key,
       data: data,
       children: children,
-      text: text
+      text: text,
+      componentOptions: componentOptions
     };
   }
 
   function isSameVnode(vnode1, vnode2) {
     return vnode1.tag === vnode2.tag && vnode1.key === vnode2.key;
+  }
+
+  function createComponent(vnode) {
+    var i = vnode.data;
+
+    if ((i = i.hook) && (i = i.init)) {
+      i(vnode);
+    }
+
+    if (vnode.componentInstance) {
+      return true;
+    }
   }
 
   function createElm(vnode) {
@@ -625,6 +703,10 @@
         text = vnode.text;
 
     if (typeof tag === "string") {
+      if (createComponent(vnode)) {
+        return vnode.componentInstance.$el;
+      }
+
       vnode.el = document.createElement(tag);
       patchProps(vnode.el, {}, data);
       children.forEach(function (child) {
@@ -639,7 +721,7 @@
   function patchProps(el) {
     var oldProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     var props = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-    // 老的属性中有，新的没有，要删除掉老的。
+    // 老的属性中 有，新的没有，要删除掉老的。
     var oldStyles = oldProps.style || {};
     var newStyles = props.style || {};
 
@@ -666,6 +748,10 @@
     }
   }
   function patch(oldVNode, vnode) {
+    if (!oldVNode) {
+      return createElm(vnode);
+    }
+
     var isRealElement = oldVNode.nodeType;
 
     if (isRealElement) {
@@ -1153,12 +1239,10 @@
         if (!ops.template && el) {
           template = el.outerHTML;
         } else {
-          if (el) {
-            template = ops.template;
-          }
+          template = ops.template;
         }
 
-        if (template && el) {
+        if (template) {
           var render = complierToFcuntion(template);
           ops.render = render;
         }

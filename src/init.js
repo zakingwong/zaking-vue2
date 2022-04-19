@@ -22,11 +22,9 @@ export function initMixin(Vue) {
       if (!ops.template && el) {
         template = el.outerHTML;
       } else {
-        if (el) {
-          template = ops.template;
-        }
+        template = ops.template;
       }
-      if (template && el) {
+      if (template) {
         const render = complierToFcuntion(template);
         ops.render = render;
       }

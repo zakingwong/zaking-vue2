@@ -14,6 +14,16 @@ LIFECYCLE.forEach((hook) => {
   };
 });
 
+strats.components = function (parentValue, childValue) {
+  const res = Object.create(parentValue);
+  if (childValue) {
+    for (const key in childValue) {
+      res[key] = childValue[key];
+    }
+  }
+  return res;
+};
+
 export function mergeOptions(parent, child) {
   const options = {};
   for (let key in parent) {
