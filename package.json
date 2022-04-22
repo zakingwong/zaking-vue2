@@ -3,23 +3,17 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "dependencies": {
+  "scripts": {
+    "dev":"rollup -cw"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.17.5",
+    "@babel/preset-env": "^7.16.11",
     "babel": "^6.23.0",
     "rollup": "^2.69.0",
     "rollup-plugin-babel": "^4.4.0"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/zakingwong/zaking-vue2.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/zakingwong/zaking-vue2/issues"
-  },
-  "homepage": "https://github.com/zakingwong/zaking-vue2#readme"
+  }
 }
