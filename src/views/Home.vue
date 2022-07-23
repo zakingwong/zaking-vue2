@@ -1,18 +1,16 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    Home Page
+    <router-link to="/a">切换a</router-link>
+    <router-link to="/b">切换b</router-link>
+    <router-view></router-view>
   </div>
 </template>
-
 <script>
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
-
 export default {
-  name: 'Home',
-  components: {
-    HelloWorld
+  name:"Home",
+  mounted(){
+    console.log(this.$router)
   }
 }
 </script>
