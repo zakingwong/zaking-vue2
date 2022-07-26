@@ -1,5 +1,19 @@
-# zaking-vue2
-1.initData.png
+# vuex-d
 
->> https://www.processon.com/view/link/6251833263768946f278f0db
-密码:zaking
+## Project setup
+```
+yarn install
+```
+
+### Compiles and hot-reloads for development
+```
+yarn serve
+```
+
+### Compiles and minifies for production
+```
+yarn build
+```
+
+### Customize configuration
+See [Configuration Reference](https://cli.vuejs.org/config/).
