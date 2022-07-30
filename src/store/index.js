@@ -44,6 +44,30 @@ export default new Vuex.Store({
           state.name = payload;
         },
       },
+      modules: {
+        b: {
+          state: {
+            name: "zakingB",
+          },
+          getters: {
+            introduce(state) {
+              return "hello,I'am" + state.name;
+            },
+          },
+          modules: {
+            d: {
+              state: {
+                name: "zakingD",
+              },
+              getters: {
+                introduce(state) {
+                  return "hello,I'am" + state.name;
+                },
+              },
+            },
+          },
+        },
+      },
     },
     c: {
       namespaced: true,

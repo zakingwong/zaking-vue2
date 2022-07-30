@@ -11,13 +11,13 @@
     <br>
     <p>a模块</p>
     <p>{{$store.state.a.name}}</p>
-    <p>{{$store.getters['a/introduce']}}</p>
+    <p>{{$store.getters['introduce']}}</p>
 
-    <button @click="$store.commit('a/changeName','小王吧-A')">改名换姓mutation-A</button>
+    <button @click="$store.commit('changeName','小王吧-A')">改名换姓mutation-A</button>
     <br>
     <p>c模块</p>
     <p>{{$store.state.c.name}}</p>
-    <button @click="$store.commit('c/changeName','小王吧-C')">改名换姓mutation-A</button>
+    <button @click="$store.commit('changeName','小王吧-C')">改名换姓mutation-A</button>
   </div>
 </template>
 

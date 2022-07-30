@@ -1,56 +1,90 @@
-export let Vue;
+import install, { Vue } from "./install";
+import ModuleCollection from "./module/module-collection";
+import { forEachValue } from "./util";
+
+function installModule(store, rootState, path, rootModule) {
+  if (path.length > 0) {
+    let parent = path.slice(0, -1).reduce((start, current) => {
+      return start[current];
+    }, rootState);
+    parent[path[path.length - 1]] = rootModule.state;
+  }
+  rootModule.forEachMutation((mutationKey, mutationValue) => {
+    store._mutations[mutationKey] = store._mutations[mutationKey] || [];
+    store._mutations[mutationKey].push((payload) => {
+      mutationValue(rootModule.state, payload);
+    });
+  });
+  rootModule.forEachAction((actionKey, actionValue) => {
+    store._actions[actionKey] = store._actions[actionKey] || [];
+    store._actions[actionKey].push((payload) => {
+      actionValue(store, payload);
+    });
+  });
+  rootModule.forEachGetter((getterKey, getterValue) => {
+    if (store._wrapperGetters[getterKey]) {
+      return console.warn("duplicate key in getters");
+    }
+    store._wrapperGetters[getterKey] = () => {
+      return getterValue(rootModule.state);
+    };
+  });
+  rootModule.forEachModule((moduleKey, module) => {
+    installModule(store, rootState, path.concat(moduleKey), module);
+  });
+}
+
+function resetStoreVM(store, state) {
+  store.getters = {};
+  const computed = {};
+  const wrapperGetters = store._wrapperGetters;
+
+  forEachValue(wrapperGetters, (getterKey, getterValue) => {
+    computed[getterKey] = getterValue;
+    Object.defineProperty(store.getters, getterKey, {
+      get: () => {
+        return store._vm[getterKey];
+      },
+    });
+  });
+
+  store._vm = new Vue({
+    data: {
+      $$state: state,
+    },
+    computed,
+  });
+}
 
 class Store {
   constructor(options) {
-    let state = options.state;
-    let getters = options.getters;
-    let mutations = options.mutations;
-    let actions = options.actions;
+    this._modules = new ModuleCollection(options);
+    this._mutations = Object.create(null);
+    this._actions = Object.create(null);
+    this._wrapperGetters = Object.create(null);
 
-    this.getters = {};
-    const computed = {};
-    Object.keys(getters).forEach((getterKey) => {
-      computed[getterKey] = () => {
-        return getters[getterKey](this.state);
-      };
-      Object.defineProperty(this.getters, getterKey, {
-        get: () => {
-          return this._vm[getterKey];
-        },
-      });
-    });
-    this._vm = new Vue({
-      data: {
-        $$state: state,
-      },
-      computed,
-    });
-    this.mutations = mutations;
-    this.actions = actions;
+    const state = this._modules.root.state;
+    installModule(this, state, [], this._modules.root);
+
+    resetStoreVM(this, state);
   }
+  commit = (type, payload) => {
+    if (this._mutations[type]) {
+      this._mutations[type].forEach((fn) => fn.call(this, payload));
+    }
+  };
+  dispatch = (type, payload) => {
+    if (this._actions[type]) {
+      this._actions[type].forEach((fn) => {
+        console.log(fn, "fn");
+        return fn.call(this, payload);
+      });
+    }
+  };
   get state() {
     return this._vm._data.$$state;
   }
-  commit = (type, payload) => {
-    this.mutations[type](this.state, payload);
-  };
-  dispatch = (type, payload) => {
-    this.actions[type](this, payload);
-  };
 }
-
-const install = (_Vue) => {
-  Vue = _Vue;
-  Vue.mixin({
-    beforeCreate() {
-      if (this.$options.store) {
-        this.$store = this.$options.store;
-      } else if (this.$parent && this.$parent.$store) {
-        this.$store = this.$parent.$store;
-      }
-    },
-  });
-};
 
 export default {
   Store,
