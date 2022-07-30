@@ -7,8 +7,10 @@ function installModule(store, rootState, path, rootModule) {
     let parent = path.slice(0, -1).reduce((start, current) => {
       return start[current];
     }, rootState);
-    parent[path[path.length - 1]] = rootModule.state;
+    Vue.set(parent, path[path.length - 1], rootModule.state);
+    // parent[path[path.length - 1]] = rootModule.state;
   }
+
   let namespaced = store._modules.getNameSpace(path);
   rootModule.forEachMutation((mutationKey, mutationValue) => {
     store._mutations[namespaced + mutationKey] =
@@ -38,6 +40,7 @@ function installModule(store, rootState, path, rootModule) {
 }
 
 function resetStoreVM(store, state) {
+  let oldVm = store._vm;
   store.getters = {};
   const computed = {};
   const wrapperGetters = store._wrapperGetters;
@@ -50,13 +53,17 @@ function resetStoreVM(store, state) {
       },
     });
   });
-
   store._vm = new Vue({
     data: {
       $$state: state,
     },
     computed,
   });
+  if (oldVm) {
+    Vue.nextTick(() => {
+      oldVm.$destory();
+    });
+  }
 }
 
 class Store {
@@ -68,7 +75,6 @@ class Store {
 
     const state = this._modules.root.state;
     installModule(this, state, [], this._modules.root);
-
     resetStoreVM(this, state);
   }
   commit = (type, payload) => {
@@ -79,11 +85,15 @@ class Store {
   dispatch = (type, payload) => {
     if (this._actions[type]) {
       this._actions[type].forEach((fn) => {
-        console.log(fn, "fn");
         return fn.call(this, payload);
       });
     }
   };
+  registerModule(path, module) {
+    this._modules.register(path, module);
+    installModule(this, this.state, path, module.newModule);
+    resetStoreVM(this, this.state);
+  }
   get state() {
     return this._vm._data.$$state;
   }

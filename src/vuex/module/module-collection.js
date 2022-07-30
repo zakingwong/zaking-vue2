@@ -15,9 +15,9 @@ export default class ModuleCollection {
   }
   register(path, rootModule) {
     let newModule = new Module(rootModule);
+    rootModule.newModule = newModule;
     if (this.root == null) {
       this.root = newModule;
-      console.log(this.root, "this.root");
     } else {
       let parent = path.slice(0, -1).reduce((start, current) => {
         // return start._children[current];

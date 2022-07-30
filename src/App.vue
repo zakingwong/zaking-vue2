@@ -18,6 +18,13 @@
     <p>c模块</p>
     <p>{{$store.state.c.name}}</p>
     <button @click="$store.commit('c/changeName','小王吧-C')">改名换姓mutation-C</button>
+    <br>
+    <p>e模块</p>
+    <p>{{$store.state.a.e.name}}</p>
+    <p>e模块的getters</p>
+    <p>{{$store.getters['a/e/introduce']}}</p>
+    <button @click="$store.commit('a/e/changeName','小王吧-E')">改名换姓mutation-E</button>
+
   </div>
 </template>
 

@@ -4,7 +4,7 @@ import Vuex from "@/vuex";
 
 Vue.use(Vuex);
 
-export default new Vuex.Store({
+const store = new Vuex.Store({
   state: {
     name: "zaking",
     a: {
@@ -83,3 +83,22 @@ export default new Vuex.Store({
     },
   },
 });
+
+store.registerModule(["a", "e"], {
+  namespaced: true,
+  state: {
+    name: "zakingE",
+  },
+  getters: {
+    introduce(state) {
+      return "hello,I'am register" + state.name;
+    },
+  },
+  mutations: {
+    changeName(state, payload) {
+      state.name = payload;
+    },
+  },
+});
+
+export default store;
