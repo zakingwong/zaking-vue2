@@ -9,23 +9,26 @@ function installModule(store, rootState, path, rootModule) {
     }, rootState);
     parent[path[path.length - 1]] = rootModule.state;
   }
+  let namespaced = store._modules.getNameSpace(path);
   rootModule.forEachMutation((mutationKey, mutationValue) => {
-    store._mutations[mutationKey] = store._mutations[mutationKey] || [];
-    store._mutations[mutationKey].push((payload) => {
+    store._mutations[namespaced + mutationKey] =
+      store._mutations[namespaced + mutationKey] || [];
+    store._mutations[namespaced + mutationKey].push((payload) => {
       mutationValue(rootModule.state, payload);
     });
   });
   rootModule.forEachAction((actionKey, actionValue) => {
-    store._actions[actionKey] = store._actions[actionKey] || [];
-    store._actions[actionKey].push((payload) => {
+    store._actions[namespaced + actionKey] =
+      store._actions[namespaced + actionKey] || [];
+    store._actions[namespaced + actionKey].push((payload) => {
       actionValue(store, payload);
     });
   });
   rootModule.forEachGetter((getterKey, getterValue) => {
-    if (store._wrapperGetters[getterKey]) {
+    if (store._wrapperGetters[namespaced + getterKey]) {
       return console.warn("duplicate key in getters");
     }
-    store._wrapperGetters[getterKey] = () => {
+    store._wrapperGetters[namespaced + getterKey] = () => {
       return getterValue(rootModule.state);
     };
   });

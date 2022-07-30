@@ -6,6 +6,13 @@ export default class ModuleCollection {
     this.root = null;
     this.register([], options);
   }
+  getNameSpace(path) {
+    let module = this.root;
+    return path.reduce((str, key) => {
+      module = module.getChild(key);
+      return str + (module.namespaced ? `${key}/` : "");
+    }, "");
+  }
   register(path, rootModule) {
     let newModule = new Module(rootModule);
     if (this.root == null) {

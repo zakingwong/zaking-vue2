@@ -46,6 +46,7 @@ export default new Vuex.Store({
       },
       modules: {
         b: {
+          namespaced: true,
           state: {
             name: "zakingB",
           },
