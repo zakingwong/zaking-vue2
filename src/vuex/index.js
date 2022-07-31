@@ -2,6 +2,12 @@ import install, { Vue } from "./install";
 import ModuleCollection from "./module/module-collection";
 import { forEachValue } from "./util";
 
+function getState(store, path) {
+  return path.reduce((start, current) => {
+    return start[current];
+  }, store.state);
+}
+
 function installModule(store, rootState, path, rootModule) {
   if (path.length > 0) {
     let parent = path.slice(0, -1).reduce((start, current) => {
@@ -16,7 +22,10 @@ function installModule(store, rootState, path, rootModule) {
     store._mutations[namespaced + mutationKey] =
       store._mutations[namespaced + mutationKey] || [];
     store._mutations[namespaced + mutationKey].push((payload) => {
-      mutationValue(rootModule.state, payload);
+      mutationValue(getState(store, path), payload);
+      store.subscribes.forEach((fn) =>
+        fn({ type: mutationKey, payload }, store.state)
+      );
     });
   });
   rootModule.forEachAction((actionKey, actionValue) => {
@@ -31,7 +40,7 @@ function installModule(store, rootState, path, rootModule) {
       return console.warn("duplicate key in getters");
     }
     store._wrapperGetters[namespaced + getterKey] = () => {
-      return getterValue(rootModule.state);
+      return getterValue(getState(store, path));
     };
   });
   rootModule.forEachModule((moduleKey, module) => {
@@ -61,7 +70,7 @@ function resetStoreVM(store, state) {
   });
   if (oldVm) {
     Vue.nextTick(() => {
-      oldVm.$destory();
+      oldVm.$destroy();
     });
   }
 }
@@ -72,10 +81,12 @@ class Store {
     this._mutations = Object.create(null);
     this._actions = Object.create(null);
     this._wrapperGetters = Object.create(null);
-
+    this.plugins = options.plugins || [];
+    this.subscribes = [];
     const state = this._modules.root.state;
     installModule(this, state, [], this._modules.root);
     resetStoreVM(this, state);
+    this.plugins.forEach((plugin) => plugin(this));
   }
   commit = (type, payload) => {
     if (this._mutations[type]) {
@@ -96,6 +107,12 @@ class Store {
   }
   get state() {
     return this._vm._data.$$state;
+  }
+  subscribe(fn) {
+    this.subscribes.push(fn);
+  }
+  replaceState(state) {
+    this._vm._data.$$state = state;
   }
 }
 

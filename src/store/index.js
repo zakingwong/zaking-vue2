@@ -1,10 +1,22 @@
 import Vue from "vue";
 // import Vuex from "vuex";
 import Vuex from "@/vuex";
+import logger from "vuex/dist/logger";
 
 Vue.use(Vuex);
 
+const persitsPlugin = function (store) {
+  let state = localStorage.getItem("VUEX");
+  if (state) {
+    store.replaceState(JSON.parse(state));
+  }
+  store.subscribe((mutation, state) => {
+    localStorage.setItem("VUEX", JSON.stringify(state));
+  });
+};
+
 const store = new Vuex.Store({
+  plugins: [persitsPlugin],
   state: {
     name: "zaking",
     a: {
