@@ -13,16 +13,19 @@ function installModule(store, rootState, path, rootModule) {
     let parent = path.slice(0, -1).reduce((start, current) => {
       return start[current];
     }, rootState);
-    Vue.set(parent, path[path.length - 1], rootModule.state);
-    // parent[path[path.length - 1]] = rootModule.state;
+    store._withCommiting(() => {
+      Vue.set(parent, path[path.length - 1], rootModule.state);
+      // parent[path[path.length - 1]] = rootModule.state;
+    });
   }
-
   let namespaced = store._modules.getNameSpace(path);
   rootModule.forEachMutation((mutationKey, mutationValue) => {
     store._mutations[namespaced + mutationKey] =
       store._mutations[namespaced + mutationKey] || [];
     store._mutations[namespaced + mutationKey].push((payload) => {
-      mutationValue(getState(store, path), payload);
+      store._withCommiting(() => {
+        mutationValue(getState(store, path), payload);
+      });
       store.subscribes.forEach((fn) =>
         fn({ type: mutationKey, payload }, store.state)
       );
@@ -32,7 +35,8 @@ function installModule(store, rootState, path, rootModule) {
     store._actions[namespaced + actionKey] =
       store._actions[namespaced + actionKey] || [];
     store._actions[namespaced + actionKey].push((payload) => {
-      actionValue(store, payload);
+      let result = actionValue(store, payload);
+      return result;
     });
   });
   rootModule.forEachGetter((getterKey, getterValue) => {
@@ -68,6 +72,18 @@ function resetStoreVM(store, state) {
     },
     computed,
   });
+  if (store.strict) {
+    store._vm.$watch(
+      () => store._vm._data.$$state,
+      () => {
+        console.assert(store._commiting, "un please outside mutation");
+      },
+      {
+        sync: true,
+        deep: true,
+      }
+    );
+  }
   if (oldVm) {
     Vue.nextTick(() => {
       oldVm.$destroy();
@@ -81,6 +97,8 @@ class Store {
     this._mutations = Object.create(null);
     this._actions = Object.create(null);
     this._wrapperGetters = Object.create(null);
+    this.strict = options.strict;
+    this._commiting = false;
     this.plugins = options.plugins || [];
     this.subscribes = [];
     const state = this._modules.root.state;
@@ -88,6 +106,12 @@ class Store {
     resetStoreVM(this, state);
     this.plugins.forEach((plugin) => plugin(this));
   }
+  _withCommiting(fn) {
+    this._commiting = true;
+    fn();
+    this._commiting = false;
+  }
+
   commit = (type, payload) => {
     if (this._mutations[type]) {
       this._mutations[type].forEach((fn) => fn.call(this, payload));
@@ -95,9 +119,9 @@ class Store {
   };
   dispatch = (type, payload) => {
     if (this._actions[type]) {
-      this._actions[type].forEach((fn) => {
-        return fn.call(this, payload);
-      });
+      return Promise.all(
+        this._actions[type].map((fn) => fn.call(this, payload))
+      );
     }
   };
   registerModule(path, module) {
@@ -112,7 +136,9 @@ class Store {
     this.subscribes.push(fn);
   }
   replaceState(state) {
-    this._vm._data.$$state = state;
+    this._withCommiting(() => {
+      this._vm._data.$$state = state;
+    });
   }
 }
 

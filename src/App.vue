@@ -24,21 +24,53 @@
     <p>e模块的getters</p>
     <p>{{$store.getters['a/e/introduce']}}</p>
     <button @click="$store.commit('a/e/changeName','小王吧-E')">改名换姓mutation-E</button>
-
+    <br>
+    <p>mapState:</p>
+    <p>{{name}}</p>
   </div>
 </template>
 
 <script>
+// import { mapState } from 'vuex'
+function mapState(stateList){
+  let obj = {};
+  for (let i = 0; i < stateList.length; i++) {
+    let stateKey = stateList[i];
+    obj[stateKey] = function (){
+      return this.$store.state[stateKey];
+    }
+  }
+  return obj;
+}
+
+function mapActions(actionList){
+  let obj = {};
+    for (let i = 0; i < actionList.length; i++) {
+    let actionKey = actionList[i];
+    obj[actionKey] = function (payload){
+      return this.$store.dispatch(actionKey,payload)
+    }
+  }
+  return obj;
+}
 
 export default {
   name: 'App',
+  computed: {
+    ...mapState([
+      // 映射 this.name 为 store.state.name
+      'name'
+    ]),
+  },
   methods:{
     handleMutationClick(){
       this.$store.commit('changeName','小王吧')
     },
-    handleActionClick(){
-      this.$store.dispatch('changeName')
-    },
+handleActionClick(){
+  this.$store.dispatch('changeName').then(()=>{
+    console.log('finished')
+  })
+},
   }
 }
 </script>

@@ -16,6 +16,7 @@ const persitsPlugin = function (store) {
 };
 
 const store = new Vuex.Store({
+  strict: true,
   plugins: [persitsPlugin],
   state: {
     name: "zaking",
@@ -35,9 +36,12 @@ const store = new Vuex.Store({
   },
   actions: {
     changeName({ commit }) {
-      setTimeout(() => {
-        commit("changeName", "zakingwong");
-      }, 1000);
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          commit("changeName", "zakingwong");
+          resolve();
+        }, 1000);
+      });
     },
   },
   modules: {
