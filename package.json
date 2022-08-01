@@ -1,0 +1,29 @@
+{
+  "name": "zaking-vue2-ssr",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zakingwong/zaking-vue2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zakingwong/zaking-vue2/issues"
+  },
+  "homepage": "https://github.com/zakingwong/zaking-vue2#readme",
+  "devDependencies": {
+    "@koa/router": "^12.0.0",
+    "koa": "^2.13.4",
+    "vue": "^2.7.8",
+    "vue-server-renderer": "^2.7.8"
+  },
+  "dependencies": {
+    "nodemon": "^2.0.19"
+  }
+}
