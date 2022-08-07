@@ -18,8 +18,8 @@ const render = VueServerRenderer.createBundleRenderer(serverBundle, {
   template: templateContent,
   clientManifest,
 });
-router.get("/", async (ctx) => {
-  ctx.body = await render.renderToString();
+router.get("/(.*)", async (ctx) => {
+  ctx.body = await render.renderToString({ url: ctx.url });
 });
 
 app.use(router.routes());

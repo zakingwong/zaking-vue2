@@ -1,17 +1,7 @@
 <template>
   <div id="app">
-    <Foo></Foo>
-    <Bar></Bar>
+    <router-link to="/foo">to Foo</router-link>
+    <router-link to="/bar">to Bar</router-link>
+    <router-view></router-view>
   </div>
 </template>
-<script>
-import Foo from "./components/Foo";
-import Bar from "./components/Bar";
-
-export default {
-  components: {
-    Foo,
-    Bar,
-  },
-};
-</script>
