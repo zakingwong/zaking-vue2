@@ -19,7 +19,13 @@ const render = VueServerRenderer.createBundleRenderer(serverBundle, {
   clientManifest,
 });
 router.get("/(.*)", async (ctx) => {
-  ctx.body = await render.renderToString({ url: ctx.url });
+  try {
+    ctx.body = await render.renderToString({ url: ctx.url });
+  } catch (error) {
+    if (error.code === 404) {
+      ctx.body = "page not found";
+    }
+  }
 });
 app.use(KoaStatic(path.resolve(__dirname, "dist")));
 app.use(router.routes());
