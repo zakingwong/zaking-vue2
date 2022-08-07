@@ -21,7 +21,6 @@ const render = VueServerRenderer.createBundleRenderer(serverBundle, {
 router.get("/(.*)", async (ctx) => {
   ctx.body = await render.renderToString({ url: ctx.url });
 });
-
-app.use(router.routes());
 app.use(KoaStatic(path.resolve(__dirname, "dist")));
+app.use(router.routes());
 app.listen(3000);
